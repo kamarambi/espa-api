@@ -41,7 +41,7 @@ class MetricsProvider(MetricsProviderInterface):
         debug = self.config.get('email.stats_debug').split(',')
 
         msg = ''
-        begin_date, end_date = self.date_range()
+        begin_date, end_date = self.prev_month_date_range()
         subject = 'LSRD ESPA Metrics for {0} to {1}'.format(begin_date,
                                                             end_date)
 
@@ -94,38 +94,62 @@ class MetricsProvider(MetricsProviderInterface):
                     'tot_vol': 0.0}
         order_paths = []
 
-        logs = self.config.url_for('weblogs').split(',')
+        log_locations = self.config.url_for('weblogs').split(',')
         # local_path = self.config.url_for('tmp')
         local_path = '/home/klsmith/tmp'
-        for log in logs:
-            host, remote_path = log.split(':')
-            remote_log = remote_path.format(datetime.datetime
-                                            .today()
-                                            .replace(day=1)
-                                            .strftime('%Y%m01'))
+        for loc in log_locations:
+            host, remote_path = loc.split(':')
 
-            local_log = os.path.join(local_path,
-                                     os.path.split(remote_log)[-1])
+            remote_logs = self.filter_remote_files(host, remote_path,
+                                                   begin_date, end_date)
 
-            try:
-                with RemoteHost(host=host, user=self.user, pw=self.pw) as r:
-                    r.get(remote_log, local_log)
+            for remote_log in remote_logs:
+                local_log = os.path.join(local_path,
+                                         os.path.split(remote_log)[-1])
 
-                info, order_p = self.calc_dlinfo(local_log,
-                                                         begin_date,
-                                                         end_date)
+                try:
+                    with RemoteHost(host=host, user=self.user, pw=self.pw) as r:
+                        r.get(remote_log, local_log)
 
-                for k in infodict:
-                    infodict[k] += info[k]
+                    info, order_p = self.calc_dlinfo(local_log,
+                                                     begin_date,
+                                                     end_date)
 
-                order_paths.extend(order_p)
+                    for k in infodict:
+                        infodict[k] += info[k]
 
-                os.remove(local_log)
-            except:
-                logger.debug('Unable to access: {0}\nOn: {1}'
-                             .format(remote_log, host))
+                    order_paths.extend(order_p)
+
+                    os.remove(local_log)
+                except:
+                    logger.debug('Unable to access: {0}\nOn: {1}'
+                                 .format(remote_log, host))
 
         return infodict, order_paths
+
+    def filter_remote_files(self, host, remote_path, begin_date, end_date):
+        """
+        Filter which log files to pull for the current and previous month
+
+        :param host:
+        :param remote_path:
+        :param begin_date:
+        :param end_date:
+        :return:
+        """
+        patterns = ['edclpdsftp.cr.usgs.gov-access_log-{0}{1}'
+                    .format(end_date.year, end_date.strftime('%m')),
+                    'edclpdsftp.cr.usgs.gov-access_log-{0}{1}'
+                    .format(end_date.year, (end_date +
+                                            datetime.timedelta(days=1))
+                            .strftime('%m'))]
+
+        with RemoteHost(host=host, user=self.user, pw=self.pw) as r:
+            files = [f.strip() for f in
+                     r.execute('ls -1 {0}'.format(remote_path))['stdout']]
+
+        return [os.path.join(remote_path, f) for f in files
+                for p in patterns if p in f]
 
     @staticmethod
     def download_boiler(info):
@@ -219,9 +243,9 @@ class MetricsProvider(MetricsProviderInterface):
         dates are given as ISO 8601 'YYYY-MM-DD'
 
         :param begin_date: Date to start the counts on
-        :type begin_date: str
+        :type begin_date: datetime date
         :param end_date: Date to end the counts on
-        :type end_date: str
+        :type end_date: datetime date
         :return: Dictionary of count values
         """
         sql = ('SELECT product_opts, id '
@@ -232,7 +256,8 @@ class MetricsProvider(MetricsProviderInterface):
         init = defaultdict(int)
 
         with db_instance() as db:
-            db.select(sql, (begin_date, end_date))
+            db.select(sql, (begin_date.isoformat(),
+                            end_date.isoformat()))
             results = reduce(self.counts_prodopts,
                              map(self.process_db_prodopts, [(_[0], _[1]) for _ in db]),
                              init)
@@ -359,12 +384,9 @@ class MetricsProvider(MetricsProviderInterface):
 
         orders = []
 
-        sd = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
-        ed = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
-
         with gzip.open(log_file) as log:
             for line in log:
-                gr = self.filter_log_line(line, sd, ed)
+                gr = self.filter_log_line(line, start_date, end_date)
                 if gr:
                     infodict['tot_vol'] += int(gr[8])
                     infodict['tot_dl'] += 1
@@ -420,9 +442,9 @@ class MetricsProvider(MetricsProviderInterface):
         :param source: EE or ESPA
         :type source: str
         :param begin_date: Date to start the count on
-        :type begin_date: str
+        :type begin_date: datetime date
         :param end_date: Date to stop the count on
-        :type end_date: str
+        :type end_date: datetime date
         :return: Dictionary of the counts
         """
         sql = ('''select COUNT(*)
@@ -448,7 +470,8 @@ class MetricsProvider(MetricsProviderInterface):
 
         with db_instance() as db:
             for q in sql:
-                db.select(q, (begin_date, end_date, source))
+                db.select(q, (begin_date.isoformat(),
+                              end_date.isoformat(), source))
 
                 if 'not like' in q:
                     counts['scenes_non'] += int(db[0][0])
@@ -469,9 +492,9 @@ class MetricsProvider(MetricsProviderInterface):
         :param source: EE or ESPA
         :type source: str
         :param begin_date: Date to start the count on
-        :type begin_date: str
+        :type begin_date: datetime date
         :param end_date: Date to stop the count on
-        :type end_date: str
+        :type end_date: datetime date
         :param dbinfo: Database connection information
         :type dbinfo: dict
         :return: Dictionary of the counts
@@ -495,7 +518,8 @@ class MetricsProvider(MetricsProviderInterface):
 
         with db_instance() as db:
             for q in sql:
-                db.select(q, (begin_date, end_date, source))
+                db.select(q, (begin_date.isoformat(),
+                              end_date.isoformat(), source))
 
                 if 'not like' in q:
                     counts['orders_non'] += int(db[0][0])
@@ -515,9 +539,9 @@ class MetricsProvider(MetricsProviderInterface):
         :param source: EE or ESPA
         :type source: str
         :param begin_date: Date to start the count on
-        :type begin_date: str
+        :type begin_date: datetime date
         :param end_date: Date to stop the count on
-        :type end_date: str
+        :type end_date: datetime date
         :return: Dictionary of the count
         """
         sql = '''select count(distinct(split_part(orderid, '-', 1)))
@@ -527,24 +551,22 @@ class MetricsProvider(MetricsProviderInterface):
                  and order_source = %s;'''
 
         with db_instance() as db:
-            db.select(sql, (begin_date, end_date, source))
+            db.select(sql, (begin_date.isoformat(),
+                            end_date.isoformat(), source))
             return db[0][0]
 
     @staticmethod
-    def date_range():
+    def prev_month_date_range():
         """
         Builds two strings for the 1st and last day of
         the previous month, ISO 8601 'YYYY-MM-DD'
 
         :return: 1st day, last day
         """
-        first = datetime.datetime.today().replace(day=1)
-        last = first - datetime.timedelta(days=2)
+        end_date = (datetime.datetime.today().date().replace(day=1) -
+                    datetime.timedelta(days=1))
 
-        num_days = calendar.monthrange(last.year, last.month)[1]
-
-        begin_date = '{0}-{1}-1'.format(last.year, last.month)
-        end_date = '{0}-{1}-{2}'.format(last.year, last.month, num_days)
+        begin_date = end_date.replace(day=1)
 
         return begin_date, end_date
 
