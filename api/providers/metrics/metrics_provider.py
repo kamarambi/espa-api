@@ -3,6 +3,7 @@ import os
 import datetime
 import urllib2
 import gzip
+import tarfile
 import calendar
 from collections import defaultdict
 import traceback
@@ -45,6 +46,7 @@ class MetricsProvider(MetricsProviderInterface):
         subject = 'LSRD ESPA Metrics for {0} to {1}'.format(begin_date,
                                                             end_date)
 
+        print begin_date, end_date
         try:
             # Fetch and process the web logs
             infodict, order_paths = self.process_weblogs(begin_date,
@@ -92,11 +94,12 @@ class MetricsProvider(MetricsProviderInterface):
         """
         infodict = {'tot_dl': 0,
                     'tot_vol': 0.0}
-        order_paths = []
+        order_paths = set()
 
         log_locations = self.config.url_for('weblogs').split(',')
         # local_path = self.config.url_for('tmp')
         local_path = '/home/klsmith/tmp'
+        # local_uncompress = os.path.join(local_path, 'edclpdsftp.cr.usgs.gov-access_log')
         for loc in log_locations:
             host, remote_path = loc.split(':')
 
@@ -104,28 +107,42 @@ class MetricsProvider(MetricsProviderInterface):
                                                    begin_date, end_date)
 
             for remote_log in remote_logs:
-                local_log = os.path.join(local_path,
-                                         os.path.split(remote_log)[-1])
+                local_gzip = os.path.join(local_path,
+                                          os.path.split(remote_log)[-1])
 
                 try:
+                    print 'retrieving: {}'.format(remote_log)
                     with RemoteHost(host=host, user=self.user, pw=self.pw) as r:
-                        r.get(remote_log, local_log)
+                        r.get(remote_log, local_gzip)
 
-                    info, order_p = self.calc_dlinfo(local_log,
+                    print 'success?: {}'.format(os.path.exists(local_gzip))
+                    # tar = tarfile.open(local_gzip)
+                    # tar.extractall(path=local_path)
+                    os.system('gzip -d {}'.format(local_gzip))
+
+                    info, order_p = self.calc_dlinfo(local_gzip[:-3],
                                                      begin_date,
                                                      end_date)
+                    print 'len: {}'.format(len(order_p))
 
                     for k in infodict:
                         infodict[k] += info[k]
 
-                    order_paths.extend(order_p)
+                    order_paths = order_paths | set(order_p)
 
-                    os.remove(local_log)
-                except:
+                    # os.remove(local_gzip)
+                    # os.remove(local_uncompress)
+                except Exception as e:
+                    print e
                     logger.debug('Unable to access: {0}\nOn: {1}'
                                  .format(remote_log, host))
+                finally:
+                    if os.path.exists(local_gzip):
+                        os.remove(local_gzip)
+                    if os.path.exists(local_gzip[:-3]):
+                        os.remove(local_gzip[:-3])
 
-        return infodict, order_paths
+        return infodict, list(order_paths)
 
     def filter_remote_files(self, host, remote_path, begin_date, end_date):
         """
@@ -384,17 +401,19 @@ class MetricsProvider(MetricsProviderInterface):
 
         orders = []
 
-        with gzip.open(log_file) as log:
+        count = 0
+        with open(log_file, 'r') as log:
             for line in log:
                 gr = self.filter_log_line(line, start_date, end_date)
                 if gr:
+                    count += 1
                     infodict['tot_vol'] += int(gr[8])
                     infodict['tot_dl'] += 1
-                    orders.append(gr[5])
+                    orders.append(gr[3])
 
         # Bytes to GB
         infodict['tot_vol'] /= 1073741824.0
-
+        print 'log: {}, count: {}'.format(log_file, count)
         return infodict, orders
 
     @staticmethod
@@ -414,19 +433,20 @@ class MetricsProvider(MetricsProviderInterface):
         :param end_date: inclusive end date
         :return: regex groups returned from re.match
         """
-        # (ip, logname, user, datetime, method, resource, status, size, referrer, agent)
-        regex = r'(.*?) (.*?) (.*?) \[(.*?)\] "(.*?) (.*?) (.*?)" (\d+) (\d+) "(.*?)" "(.*?)"'
+        # (ip, datetime, method, resource, protocol, status, request length, sent range,
+        #  bytes sent, request time, referrer, agent)
+        regex = r'(.*?) - \[(.*?)\] "(.*?) (.*?) (.*?)" (\d+) (\d+) (.*?) (\d+) \[(\d+\.\d+)\] "(.*?)" "(.*?)"'
 
         try:
             gr = re.match(regex, line).groups()
-            ts, tz = gr[3].split()
+            ts, tz = gr[1].split()
             dt = datetime.datetime.strptime(ts, r'%d/%b/%Y:%H:%M:%S').date()
 
-            if (gr[7] == '200' and
-                    gr[4] == 'GET' and
-                    '.tar.gz' in gr[5] and
-                    '/orders/' in gr[5] and
-                    start_date <= dt <= end_date):
+            if ((gr[5] == '200' or gr[5] == '206')
+                and gr[2] == 'GET'
+                and '.tar.gz' in gr[3]
+                and '/orders/' in gr[3]
+                and start_date <= dt <= end_date):
 
                 return gr
         except:
