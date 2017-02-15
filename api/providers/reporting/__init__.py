@@ -267,6 +267,16 @@ REPORTS = {
                         and o.product_opts->sensors ? 'inputs'
                         group by o.order_source, sensors, usgsemail
                         order by usgsemail desc, o.order_source, sensors; '''
+    },
+    'metrics_orders_ordered': {
+            'display_name': 'Metrics - Orders Ordered',
+            'description': 'Shows the number of orders ordered per interface',
+            'query':r'''select COUNT(*),
+                            order_source,
+                            email ~* '.*usgs.gov$' usgsemail
+                        from ordering_order
+                        where order_date >= now() - interval '1 month'
+                        group by order_source, usgsemail '''
     }
 }
 
