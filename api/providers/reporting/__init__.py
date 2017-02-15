@@ -263,7 +263,7 @@ REPORTS = {
                             o.email ~* '.*usgs.gov$' usgsemail
                         from ordering_order o,
                         lateral jsonb_object_keys(product_opts) sensors
-                        where o.order_date >= now() - interval '1 month'
+                        where o.order_date > now() - interval '1 month'
                         and o.product_opts->sensors ? 'inputs'
                         group by o.order_source, sensors, usgsemail
                         order by usgsemail desc, o.order_source, sensors; '''
@@ -275,7 +275,7 @@ REPORTS = {
                             order_source,
                             email ~* '.*usgs.gov$' usgsemail
                         from ordering_order
-                        where order_date >= now() - interval '1 month'
+                        where order_date > now() - interval '1 month'
                         group by order_source, usgsemail '''
     },
     'metrics_unique_users': {
