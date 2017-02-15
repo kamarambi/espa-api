@@ -277,6 +277,14 @@ REPORTS = {
                         from ordering_order
                         where order_date >= now() - interval '1 month'
                         group by order_source, usgsemail '''
+    },
+    'metrics_unique_users': {
+            'display_name': 'Metrics - Unique Users',
+            'description': 'Shows the total number of unique users per interface',
+            'query':r'''select count(distinct email), order_source
+                        from ordering_order
+                        where order_date > now() - interval '1 month'
+                        group by order_source'''
     }
 }
 
