@@ -253,6 +253,17 @@ REPORTS = {
                      AND s.status = 'oncache'
                      AND q.email = u.email
                      ORDER BY q.running ASC, o.order_date ASC'''
+    },
+    'metrics_scenes_ordered_usgs': {
+            'display_name': 'Metrics - Scenes Ordered',
+            'description': 'Shows the number of scenes ordered per interface, separated by USGS and non-USGS emails',
+            'query':r'''select COUNT(*) N, o.order_source,
+                        o.email ~* '.*usgs.gov$' usgsemail
+                        from ordering_scene s
+                        inner join ordering_order o on s.order_id = o.id
+                        where o.order_date >= now() - interval '1 month'
+                        and s.name != 'plot'
+                        group by o.order_source, usgsemail; '''
     }
 }
 
