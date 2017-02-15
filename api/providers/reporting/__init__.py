@@ -257,13 +257,16 @@ REPORTS = {
     'metrics_scenes_ordered_usgs': {
             'display_name': 'Metrics - Scenes Ordered',
             'description': 'Shows the number of scenes ordered per interface, separated by USGS and non-USGS emails',
-            'query':r'''select COUNT(*) N, o.order_source,
-                        o.email ~* '.*usgs.gov$' usgsemail
-                        from ordering_scene s
-                        inner join ordering_order o on s.order_id = o.id
+            'query':r'''select SUM(jsonb_array_length(o.product_opts->sensors->'inputs')),
+                            sensors,
+                            o.order_source,
+                            o.email ~* '.*usgs.gov$' usgsemail
+                        from ordering_order o,
+                        lateral jsonb_object_keys(product_opts) sensors
                         where o.order_date >= now() - interval '1 month'
-                        and s.name != 'plot'
-                        group by o.order_source, usgsemail; '''
+                        and o.product_opts->sensors ? 'inputs'
+                        group by o.order_source, sensors, usgsemail
+                        order by usgsemail desc, o.order_source, sensors; '''
     }
 }
 
