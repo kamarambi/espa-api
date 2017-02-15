@@ -281,10 +281,12 @@ REPORTS = {
     'metrics_unique_users': {
             'display_name': 'Metrics - Unique Users',
             'description': 'Shows the total number of unique users per interface',
-            'query':r'''select count(distinct email), order_source
+            'query':r'''select count(distinct email),
+                            order_source,
+                            email ~* '.*usgs.gov$' usgsemail
                         from ordering_order
                         where order_date > now() - interval '1 month'
-                        group by order_source'''
+                        group by order_source, usgsemail;'''
     }
 }
 
