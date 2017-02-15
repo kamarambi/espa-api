@@ -287,6 +287,17 @@ REPORTS = {
                         from ordering_order
                         where order_date > now() - interval '1 month'
                         group by order_source, usgsemail;'''
+    },
+    'metrics_products_ordered': {
+            'display_name': 'Metrics - Ordered Product counts',
+            'description': 'Shows the total number of products ordered for each sensor type',
+            'query':r'''select count(*), products, sensors
+                        from ordering_order,
+                        lateral jsonb_object_keys(product_opts) sensors,
+                        lateral jsonb_array_elements(product_opts->sensors->'products') products
+                        where order_date > now() - interval '1 month'
+                        and product_opts->sensors ? 'inputs'
+                        group by products, sensors'''
     }
 }
 
