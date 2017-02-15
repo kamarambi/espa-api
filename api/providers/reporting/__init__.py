@@ -298,6 +298,20 @@ REPORTS = {
                         where order_date > now() - interval '1 month'
                         and product_opts->sensors ? 'inputs'
                         group by products, sensors'''
+    },
+    'metrics_top_users': {
+            'display_name': 'Metrics - Top Users Scene counts',
+            'description': 'Shows the total number of scenes ordered grouped by user email',
+            'query':r'''select o.email,
+                            sum(jsonb_array_length(o.product_opts->sensor->'inputs')) scenes,
+                            sensor
+                        from ordering_order o,
+                             lateral jsonb_object_keys(o.product_opts) sensor
+                        where o.order_date > now() - interval '1 month'
+                        and o.product_opts->sensor ? 'inputs'
+                        group by o.email, sensor
+                        order by scenes desc
+                        limit 15 '''
     }
 }
 
