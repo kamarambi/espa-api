@@ -257,7 +257,7 @@ REPORTS = {
     'metrics_scenes_ordered_usgs': {
             'display_name': 'Metrics - Scenes Ordered',
             'description': 'Shows the number of scenes ordered per interface, separated by USGS and non-USGS emails',
-            'query':r'''select SUM(jsonb_array_length(o.product_opts->sensors->'inputs')),
+            'query':r'''select SUM(jsonb_array_length(o.product_opts->sensors->'inputs')) scenes,
                             sensors,
                             o.order_source,
                             o.email ~* '.*usgs.gov$' usgsemail
@@ -271,7 +271,7 @@ REPORTS = {
     'metrics_orders_ordered': {
             'display_name': 'Metrics - Orders Ordered',
             'description': 'Shows the number of orders ordered per interface',
-            'query':r'''select COUNT(*),
+            'query':r'''select COUNT(*) orders,
                             order_source,
                             email ~* '.*usgs.gov$' usgsemail
                         from ordering_order
@@ -281,7 +281,7 @@ REPORTS = {
     'metrics_unique_users': {
             'display_name': 'Metrics - Unique Users',
             'description': 'Shows the total number of unique users per interface',
-            'query':r'''select count(distinct email),
+            'query':r'''select count(distinct email) emails,
                             order_source,
                             email ~* '.*usgs.gov$' usgsemail
                         from ordering_order
@@ -291,7 +291,7 @@ REPORTS = {
     'metrics_products_ordered': {
             'display_name': 'Metrics - Ordered Product counts',
             'description': 'Shows the total number of products ordered for each sensor type',
-            'query':r'''select count(*), products, sensors
+            'query':r'''select count(*) orders, products, sensors
                         from ordering_order,
                         lateral jsonb_object_keys(product_opts) sensors,
                         lateral jsonb_array_elements(product_opts->sensors->'products') products
