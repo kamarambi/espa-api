@@ -260,7 +260,7 @@ REPORTS = {
             'query':r'''select SUM(jsonb_array_length(o.product_opts->sensors->'inputs')) scenes,
                             sensors,
                             o.order_source,
-                            o.email ~* '.*usgs.gov$' usgsemail
+                            (case when o.email ~* '.*usgs.gov$' then '@usgs.gov' else 'other' end) usgsemail
                         from ordering_order o,
                         lateral jsonb_object_keys(product_opts) sensors
                         where o.order_date > now() - interval '1 month'
@@ -273,7 +273,7 @@ REPORTS = {
             'description': 'Shows the number of orders ordered per interface',
             'query':r'''select COUNT(*) orders,
                             order_source,
-                            email ~* '.*usgs.gov$' usgsemail
+                            (case when o.email ~* '.*usgs.gov$' then '@usgs.gov' else 'other' end) usgsemail
                         from ordering_order
                         where order_date > now() - interval '1 month'
                         group by order_source, usgsemail '''
@@ -283,7 +283,7 @@ REPORTS = {
             'description': 'Shows the total number of unique users per interface',
             'query':r'''select count(distinct email) emails,
                             order_source,
-                            email ~* '.*usgs.gov$' usgsemail
+                            (case when o.email ~* '.*usgs.gov$' then '@usgs.gov' else 'other' end) usgsemail
                         from ordering_order
                         where order_date > now() - interval '1 month'
                         group by order_source, usgsemail;'''
