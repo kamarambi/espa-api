@@ -97,7 +97,8 @@ transport_api.add_resource(ProductionOperations,
                            '/production-api/v<version>/queue-products')
 
 transport_api.add_resource(ProductionStats,
-                           '/production-api/v<version>/statistics/<name>')
+                           '/production-api/v<version>/statistics/<name>',
+                           '/production-api/v<version>/metrics/<name>')
 
 transport_api.add_resource(ProductionManagement,
                            '/production-api/v<version>/handle-orphans')
