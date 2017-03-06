@@ -216,3 +216,20 @@ class API(object):
             logger.debug("ERR retrieving auxiliary report for {} group, year {}\ntrace: {}".format(group, year, traceback.format_exc()))
             response = default_error_message
         return response
+
+    def get_metrics(self, name, data):
+        """
+        Combine parameters into query and return DB results
+
+        :param name: dict key to select query
+        :param data: query parameters
+        :return:
+        """
+        try:
+            # TODO - Safely parse data from POST
+            response = self.reporting.get_metrics(name, data)
+        except:
+            logger.debug("ERR retrieving metrics report for {}\ndata={}\ntrace:"
+                         " {}".format(name, data, traceback.format_exc()))
+            response = default_error_message
+        return response
