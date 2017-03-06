@@ -3,6 +3,7 @@ from api.providers.reporting import ReportingProviderInterfaceV0
 from api.system.logger import ilogger as logger
 from api.providers.reporting import REPORTS
 from api.providers.reporting import STATS
+from api.providers.reporting import METRICS
 from api.providers.configuration.configuration_provider import ConfigurationProvider
 
 import copy
@@ -112,3 +113,25 @@ class ReportingProvider(ReportingProviderInterfaceV0):
                     return {"msg": "%s report could not be found" % report}
 
         return return_dict
+
+    def get_metrics(self, name, data):
+        """
+        Combine parameters into query and return DB results
+
+        :param name: dict key to select query
+        :param data: query parameters
+        :return:
+        """
+        if name not in METRICS.keys():
+            return {"msg": "name must be in {}".format(METRICS.keys())}
+
+        query = METRICS[name]['query']
+
+        if 'sensors' in data:
+            data['sensors'] = tuple(map(str,data['sensors']))
+
+        if query is not None and len(query) > 0:
+            with db_instance() as db:
+                db.select(query.format(**data))
+                result = db.dictfetchall
+            return result
