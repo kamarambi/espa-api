@@ -298,6 +298,68 @@ STATS = {
     },
 }
 
+METRICS = {'metrics_orders_ordered': {
+                'query': r'''
+                select COUNT(distinct orderid) orders
+                from ordering_order
+                left join lateral jsonb_object_keys(product_opts) sensors on True
+                where order_date::date >= '{start_date}'
+                and order_date::date <= '{stop_date}'
+                and orderid {internal_email} '%%@usgs.gov-%%'
+                and order_source = '{order_source}'
+                and sensors in {sensors}
+                and product_opts->sensors ? 'inputs' '''
+    },
+    'metrics_scenes_ordered': {
+        'query': r'''
+                select coalesce(sum(jsonb_array_length(product_opts->sensors->'inputs')),0) scenes
+                from ordering_order
+                left join lateral jsonb_object_keys(product_opts) sensors on True
+                where ordering_order.order_date::date >= '{start_date}'
+                and ordering_order.order_date::date <= '{stop_date}'
+                and ordering_order.orderid {internal_email} '%%@usgs.gov-%%'
+                and ordering_order.order_source = '{order_source}'
+                and sensors in {sensors}
+                and product_opts->sensors ? 'inputs' '''
+    },
+    'metrics_unique_users': {
+        'query': r'''
+                select count(distinct(split_part(orderid, '-', 1)))
+                from ordering_order
+                left join lateral jsonb_object_keys(product_opts) sensors on True
+                where order_date::date >= '{start_date}'
+                and order_date::date <= '{stop_date}'
+                and order_source = '{order_source}'
+                and sensors in {sensors}
+                and product_opts->sensors ? 'inputs' '''
+    },
+    'metrics_ordered_products': {
+        'query': r'''
+            SELECT product_opts
+            FROM ordering_order
+            left join lateral jsonb_object_keys(product_opts) sensors on True
+            WHERE order_date::date >= '{start_date}'
+            AND order_date::date <= '{stop_date}'
+            AND sensors in {sensors}
+            and product_opts->sensors ? 'inputs'
+            group by product_opts, id '''
+    },
+    'metrics_top_users': {
+        'query': r'''
+            select u.email, coalesce(sum(jsonb_array_length(product_opts->sensors->'inputs')),0) scenes
+            from ordering_order o
+            left join lateral jsonb_object_keys(product_opts) sensors on True
+            join auth_user u
+                 on o.user_id = u.id
+            where o.order_date::date >= '{start_date}'
+            and o.order_date::date <= '{stop_date}'
+            and sensors in {sensors}
+            and product_opts->sensors ? 'inputs'
+            group by u.email order by scenes desc
+            limit 10'''
+    }
+}
+
 
 class ReportingProviderInterfaceV0(object):
     __metaclass__ = abc.ABCMeta
