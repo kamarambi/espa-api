@@ -138,6 +138,12 @@ class ProductionStats(Resource):
     def get(version, name):
         return espa.get_stat(name)
 
+    @staticmethod
+    def post(version, name=None):
+        data = request.get_json(force=True)
+        if 'metrics' in request.url:
+            return espa.get_metrics(name, data)
+
 
 class SystemStatus(Resource):
     decorators = [auth.login_required, whitelist, version_filter]
