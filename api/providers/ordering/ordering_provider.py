@@ -213,7 +213,7 @@ class OrderingProvider(ProviderInterfaceV0):
                       'status': 'ordered',
                       'product_opts': new_order,
                       'ee_order_id': '',
-                      'order_source': 'espa',
+                      'order_source': new_order.pop('order_source', 'espa'),
                       'order_date': ts,
                       'priority': 'normal',
                       'note': new_order.get('note', None),
