@@ -283,6 +283,20 @@ class TestValidation(unittest.TestCase):
         new_order = api.validation.validate(valid_order, self.staffuser.username)
         self.assertEqual(new_order.get('order_source'), order_source)
 
+    @patch('api.providers.validation.validictory.api_cfg')
+    def test_validate_order_source_fall_back(self, mock_config):
+        d = {'key': 'secret-key'}
+        mock_config.return_value = MagicMock()
+        mock_config.return_value.get = d.get
+        valid_order = copy.deepcopy(self.base_order)
+        secret_key = 'this-should-be-a-secret'  # User trying to fake/guess this
+        signer = itsdangerous.URLSafeTimedSerializer(secret_key)
+        order_source = 'external'
+        fall_back_source = 'espa'
+        valid_order['order_source'] = signer.dumps(order_source).encode('hex')
+        new_order = api.validation.validate(valid_order, self.staffuser.username)
+        self.assertEqual(new_order.get('order_source'), fall_back_source)
+
 
 class TestInventory(unittest.TestCase):
     def setUp(self):
