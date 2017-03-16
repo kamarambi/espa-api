@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import unittest
+from mock import patch, MagicMock
 import yaml
 import copy
+import itsdangerous
 
 from api.interfaces.ordering.version1 import API as APIv1
 from api.util import lowercase_all
@@ -267,6 +269,19 @@ class TestValidation(unittest.TestCase):
                         self.fail('\n{} Exception was not raised\n'
                                   '\nExpected exception message:\n{}\n'
                                   .format(exc_type, str(err_message)))
+
+    @patch('api.providers.validation.validictory.api_cfg')
+    def test_validate_order_source(self, mock_config):
+        d = {'key': 'secret-key'}
+        mock_config.return_value = MagicMock()
+        mock_config.return_value.get = d.get
+        valid_order = copy.deepcopy(self.base_order)
+        secret_key = d['key']
+        signer = itsdangerous.URLSafeTimedSerializer(secret_key)
+        order_source = 'external'
+        valid_order['order_source'] = signer.dumps(order_source).encode('hex')
+        new_order = api.validation.validate(valid_order, self.staffuser.username)
+        self.assertEqual(new_order.get('order_source'), order_source)
 
 
 class TestInventory(unittest.TestCase):
