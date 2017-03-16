@@ -5,11 +5,13 @@ import yaml
 
 import validictory
 from validictory.validator import RequiredFieldValidationError, SchemaError, DependencyValidationError
+import itsdangerous
 
 from api.providers.validation import ValidationInterfaceV0
 from api import ValidationException
 import api.providers.ordering.ordering_provider as ordering
 import api.domain.sensor as sn
+from api.util import api_cfg
 
 
 class OrderValidatorV0(validictory.SchemaValidator):
@@ -566,6 +568,33 @@ class ValidationProvider(ValidationInterfaceV0):
                         order[key]['products'].append('stats')
 
         return order
+
+    @staticmethod
+    def parse_origin(origin_key):
+        """
+        Parse signed key (hex encoded) for acceptable order-sources
+        :param origin_key: string representing the signed-key
+        :return: string
+        """
+        expected_sources = ('external', 'espa')
+        retval = 'espa'
+        key = api_cfg('config').get('key')
+        origin_key = origin_key.decode('hex')  # Avoid lowercase_all issues
+        signature = itsdangerous.URLSafeTimedSerializer(key)
+        decoded_value = None
+        try:
+            interval_expire = 60  # seconds
+            decoded_value = signature.loads(origin_key, max_age=interval_expire)
+        except itsdangerous.BadSignature:
+            pass  # User tampered with the signature
+        except itsdangerous.SignatureExpired:
+            pass  # User is trying to use an old key
+
+        # If the user has guessed the secret key, and is producing a signed
+        #   valid key, this will at least limit their options for DB corruption
+        if decoded_value in expected_sources:
+            retval = expected_sources[expected_sources.index(decoded_value)]
+        return retval
 
     def fetch_projections(self):
         """
