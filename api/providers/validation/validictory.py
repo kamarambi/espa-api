@@ -467,6 +467,7 @@ class BaseValidationSchema(object):
                                      'resampling_method': {'type': 'string',
                                                            'enum': resampling_methods},
                                      'response-readable': {'type': 'boolean'},
+                                     'order_source': {'type': 'string'},
                                      'plot_statistics': {'type': 'boolean'},
                                      'note': {'type': 'string',
                                               'required': False,
@@ -528,8 +529,8 @@ class ValidationProvider(ValidationInterfaceV0):
 
         return self.massage_formatting(order)
 
-    @staticmethod
-    def massage_formatting(order):
+    @classmethod
+    def massage_formatting(self, order):
         """
         To avoid complications down the line, we need to ensure proper case formatting
         on the order, while still being somewhat case agnostic
@@ -547,6 +548,10 @@ class ValidationProvider(ValidationInterfaceV0):
             stats = True
 
         _ = order.pop('response-readable', None)
+
+        if order.get('order_source'):
+            order_source = self.parse_origin(order['order_source'])
+            order['order_source'] = order_source
 
         for key in order:
             if key in prod_keys:
