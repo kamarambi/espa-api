@@ -74,7 +74,8 @@ transport_api.add_resource(Reports,
                            '/api/v<version>/statistics/',
                            '/api/v<version>/statistics/<name>',
                            '/api/v<version>/aux_report/<group>/',
-                           '/api/v<version>/aux_report/<group>/<year>')
+                           '/api/v<version>/aux_report/<group>/<year>',
+                           '/api/v<version>/metrics/<name>')
 
 transport_api.add_resource(SystemStatus,
                            '/api/v<version>/system-status',
@@ -97,8 +98,7 @@ transport_api.add_resource(ProductionOperations,
                            '/production-api/v<version>/queue-products')
 
 transport_api.add_resource(ProductionStats,
-                           '/production-api/v<version>/statistics/<name>',
-                           '/production-api/v<version>/metrics/<name>')
+                           '/production-api/v<version>/statistics/<name>')
 
 transport_api.add_resource(ProductionManagement,
                            '/production-api/v<version>/handle-orphans')
