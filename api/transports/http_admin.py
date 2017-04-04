@@ -130,6 +130,15 @@ class Reports(Resource):
             else:
                 return espa.available_stats()
 
+    @staticmethod
+    def post(version, name=None):
+        data = request.get_json(force=True)
+        if 'metrics' in request.url:
+            if name == 'all':
+                return espa.available_metrics()
+            else:
+                return espa.get_metrics(name, data)
+
 
 class ProductionStats(Resource):
     decorators = [version_filter, stats_whitelist]
@@ -137,12 +146,6 @@ class ProductionStats(Resource):
     @staticmethod
     def get(version, name):
         return espa.get_stat(name)
-
-    @staticmethod
-    def post(version, name=None):
-        data = request.get_json(force=True)
-        if 'metrics' in request.url:
-            return espa.get_metrics(name, data)
 
 
 class SystemStatus(Resource):
