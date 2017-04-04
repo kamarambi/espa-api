@@ -233,3 +233,17 @@ class API(object):
                          " {}".format(name, data, traceback.format_exc()))
             response = default_error_message
         return response
+
+    def available_metrics(self):
+        """
+        returns list of available metrics
+        :return: List
+        """
+        try:
+            response = self.reporting.list_metrics()
+        except:
+            logger.debug("ERR getting available metrics\n"
+                         "trace: {0}".format(traceback.format_exc()))
+            response = default_error_message
+
+        return response
