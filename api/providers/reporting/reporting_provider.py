@@ -114,6 +114,17 @@ class ReportingProvider(ReportingProviderInterfaceV0):
 
         return return_dict
 
+    def list_metrics(self, hide_query=True):
+        result = {}
+        # make a copy of this as we dont want to modify the
+        # actual dict in this module
+        _reports = copy.deepcopy(METRICS)
+        for key, value in _reports.iteritems():
+            if hide_query:
+                value['query'] = ''
+            result[key] = value
+        return result
+
     def get_metrics(self, name, data):
         """
         Combine parameters into query and return DB results
