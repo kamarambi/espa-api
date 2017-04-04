@@ -299,6 +299,8 @@ STATS = {
 }
 
 METRICS = {'metrics_orders_ordered': {
+                'display_name': 'Orders Ordered',
+                'description': 'Count number of orders by source/email',
                 'query': r'''
                 select COUNT(distinct orderid) orders
                 from ordering_order
@@ -311,6 +313,8 @@ METRICS = {'metrics_orders_ordered': {
                 and product_opts->sensors ? 'inputs' '''
     },
     'metrics_scenes_ordered': {
+        'display_name': 'Scenes Ordered',
+        'description': 'Count number of scenes by source/email',
         'query': r'''
                 select coalesce(sum(jsonb_array_length(product_opts->sensors->'inputs')),0) scenes
                 from ordering_order
@@ -323,6 +327,8 @@ METRICS = {'metrics_orders_ordered': {
                 and product_opts->sensors ? 'inputs' '''
     },
     'metrics_unique_users': {
+        'display_name': 'Unique Users',
+        'description': 'Count distinct email addresses from orders',
         'query': r'''
                 select count(distinct(split_part(orderid, '-', 1)))
                 from ordering_order
@@ -334,6 +340,8 @@ METRICS = {'metrics_orders_ordered': {
                 and product_opts->sensors ? 'inputs' '''
     },
     'metrics_ordered_products': {
+        'display_name': 'Ordered Products',
+        'description': 'Ordered Product Options',
         'query': r'''
             SELECT product_opts
             FROM ordering_order
@@ -345,6 +353,8 @@ METRICS = {'metrics_orders_ordered': {
             group by product_opts, id '''
     },
     'metrics_top_users': {
+        'display_name': 'Top 10 Users',
+        'description': 'Count orders placed by unique users email',
         'query': r'''
             select u.email, coalesce(sum(jsonb_array_length(product_opts->sensors->'inputs')),0) scenes
             from ordering_order o
