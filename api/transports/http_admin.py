@@ -203,3 +203,30 @@ class OrderResets(Resource):
         _to_state = _to_whole.split('_')[-1]
         return str(espa.error_to(orderid, _to_state))
 
+
+class MaintenanceStatus(Resource):
+    decorators = [auth.login_required, whitelist, version_filter]
+
+    @staticmethod
+    def get(version):
+        message = espa.get_maintenance_status()
+        return message
+
+    @staticmethod
+    def post(version):
+        data = request.get_json(force=True)
+        try:
+            response = espa.update_maintenance_status(data)
+            if response is not True:
+                resp = MessagesResponse(errors=['internal server error'],
+                                        code=500)
+            elif isinstance(response, dict) and response.keys() == ['msg']:
+                resp = MessagesResponse(errors=response['msg'],
+                                        code=400)
+            else:
+                return 'success'
+        except Exception as e:
+            logger.debug("ERROR updating system status: {0}".format(traceback.format_exc()))
+            resp = MessagesResponse(errors=['internal server error'],
+                                    code=500)
+        return resp()
