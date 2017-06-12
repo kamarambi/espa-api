@@ -216,3 +216,22 @@ class API(object):
             logger.debug("ERR retrieving auxiliary report for {} group, year {}\ntrace: {}".format(group, year, traceback.format_exc()))
             response = default_error_message
         return response
+
+    def get_maintenance_status(self):
+        # TODO: docstring
+        try:
+            response = self.admin.get_maintenance_status()
+        except:
+            logger.debug("ERR retrieving maintenance page status\ntrace: {}"
+                         .format(traceback.format_exc()))
+            response = default_error_message
+        return response
+
+    def update_maintenance_status(self, params):
+        # TODO: docstring
+        try:
+            response = self.admin.update_maintenance_status(params)
+        except:
+            logger.debug("ERR updating system status params: {0}\n exception {1}".format(params, traceback.format_exc()))
+            raise
+        return response

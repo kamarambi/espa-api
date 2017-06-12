@@ -129,3 +129,49 @@ class AdministrationProvider(AdminProviderInterfaceV0):
     @staticmethod
     def stat_whitelist():
         return api_cfg()['stat_whitelist']
+
+    @staticmethod
+    def get_maintenance_status():
+        sql = "select key, value from ordering_configuration where " \
+              "key in ('msg.display_maintenance_message', 'msg.maintenance_message_body');"
+        with db_instance() as db:
+            db.select(sql)
+
+        if db:
+            resp_dict = dict(db.fetcharr)
+            return {'maintenance_message_body': resp_dict['msg.maintenance_message_body'],
+                    'display_maintenance_message': resp_dict['msg.display_maintenance_message']}
+        else:
+            return {'maintenance_message_body': None, 'display_maintenance_message': None}
+
+    def update_maintenance_status(self, params):
+        remote = RemoteHost(*self.config.get(('landsatds.webhost', 'landsatds.username', 'landsat.password')))
+
+        required_keys = ('display_maintenance_message', 'maintenance_message_body')
+
+        if set(params) != set(required_keys):
+            return {'msg': 'Only {n} params valid, must be: {keys}'
+                           .format(n=len(required_keys), keys=required_keys)}
+        logger.info('!'*30)
+        sql = '''update ordering_configuration set value = %s where key = 'msg.display_maintenance_message';
+                 update ordering_configuration set value = %s where key = 'msg.maintenance_message_body'; '''
+        sql_vals = (params['display_maintenance_message'], params['maintenance_message_body'])
+        try:
+            with db_instance() as db:
+                db.execute(sql, sql_vals)
+                db.commit()
+        except DBConnectException as e:
+            logger.debug("error updating system status: {}".format(e))
+            return {'msg': "error updating database: {}".format(e.message)}
+
+        html_config_loc = self.config.get('landsatds.webfiles')
+        cmds = ['echo "{msg}" > {loc}/static/message_content.html'
+                .format(msg=params['maintenance_message_body'], loc=html_config_loc)]
+        if 'true' == params['display_maintenance_message'].lower():
+            cmds += ['unlink {loc}/maintenance.html'.format(loc=html_config_loc),
+                     'ln -s {loc}/maintenance.html.save {loc}/maintenance.html'
+                     .format(loc=html_config_loc)]
+        for cmd in cmds:
+            remote.execute(cmd)
+
+        return True
