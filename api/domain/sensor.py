@@ -86,6 +86,32 @@ class SensorProduct(object):
         self.sensor_code = product_id[0:3]
 
 
+class Abi(SensorProduct):
+    """Superclass for all Advanced-Baseline-Imager (ABI) products"""
+    input_filename_extension = '.nc'
+    l1_provider = 'dmid'
+
+    def __init__(self, product_id):
+        super(Abi, self).__init__(product_id)
+
+
+class Goes16(Abi):
+    """Superclass for GOES-16 based ABI products"""
+    sensor_name = 'goes16'
+    products = [AllProducts.toa_b2, AllProducts.toa_b3, AllProducts.toa_ndvi]
+
+
+class AbiCmip(Abi):
+    """models ABI Cloud/Moisture Imagery Product (CMIP)"""
+    default_resolution_m = 1000
+    default_resolution_dd = 0.0089831
+
+
+class AbiGoes16Cmip(Goes16, AbiCmip):
+    """models ABI CMIP from GOES 16"""
+    lta_json_name = 'GOES16_ABI_CMIP'
+
+
 class Modis(SensorProduct):
     """Superclass for all Modis products"""
     short_name = None
