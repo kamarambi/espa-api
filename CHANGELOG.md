@@ -1,4 +1,6 @@
 ## Change Notes
+###### September 2017
+* Allow GOES-ABI TOA processing (staff only)
 ###### August 2017
 * Begin using M2M for input validation (ESPA_M2M_MODE)
 ###### July 2017
