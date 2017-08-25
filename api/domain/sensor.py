@@ -44,17 +44,18 @@ class ProductNames(object):
                      "stats")
 AllProducts = ProductNames().get()
 
+
 class SensorProduct(object):
     """Base class for all sensor products"""
 
     # landsat sceneid, modis tile name, aster granule id, etc.
     product_id = None
 
-    # lt5, le7, mod, myd, etc
-    sensor_code = None
-
-    # tm, etm, terra, aqua, etc
+    # tm, etm, modis, abi, etc
     sensor_name = None
+
+    # Landsat7, Terra, GOES16, etc
+    platform_name = None
 
     # four digits
     year = None
@@ -83,7 +84,6 @@ class SensorProduct(object):
         """
 
         self.product_id = product_id
-        self.sensor_code = product_id[0:3]
 
 
 class Abi(SensorProduct):
@@ -97,7 +97,8 @@ class Abi(SensorProduct):
 
 class Goes16(Abi):
     """Superclass for GOES-16 based ABI products"""
-    sensor_name = 'goes16'
+    platform_name = 'goes16'
+    sensor_name = 'abi'
     products = [AllProducts.toa_b2, AllProducts.toa_b3, AllProducts.toa_ndvi]
 
 
@@ -146,17 +147,17 @@ class Modis(SensorProduct):
         return 'MODIS: {}'.format(self.__dict__)
 
 
-
 class Terra(Modis):
     """Superclass for Terra based Modis products"""
-
-    sensor_name = 'terra'
+    platform_name = 'terra'
+    sensor_name = 'modis'
     products = [AllProducts.l1, AllProducts.stats]
 
 
 class Aqua(Modis):
     """Superclass for Aqua based Modis products"""
-    sensor_name = 'aqua'
+    platform_name = 'aqua'
+    sensor_name = 'modis'
     products = [AllProducts.l1, AllProducts.stats]
 
 
@@ -435,6 +436,7 @@ class LandsatTIRS(Landsat):
 
 class Landsat4(Landsat):
     """Models Landsat 4 only products"""
+    platform_name = 'landsat4'
 
     def __init__(self, product_id):
         super(Landsat4, self).__init__(product_id)
@@ -450,6 +452,7 @@ class Landsat4TM(LandsatTM, Landsat4):
 
 class Landsat5(Landsat):
     """Models Landsat 5 only products"""
+    platform_name = 'landsat5'
 
     def __init__(self, product_id):
         super(Landsat5, self).__init__(product_id)
@@ -465,6 +468,7 @@ class Landsat5TM(LandsatTM, Landsat5):
 
 class Landsat7(Landsat):
     """Models Landsat 7 only products"""
+    platform_name = 'landsat7'
 
     def __init__(self, product_id):
         super(Landsat7, self).__init__(product_id)
@@ -480,6 +484,7 @@ class Landsat7ETM(LandsatETM, Landsat7):
 
 class Landsat8(Landsat):
     """Models Landsat 8 only products"""
+    platform_name = 'landsat8'
 
     def __init__(self, product_id):
         super(Landsat8, self).__init__(product_id)
