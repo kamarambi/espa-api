@@ -94,6 +94,14 @@ class Abi(SensorProduct):
     def __init__(self, product_id):
         super(Abi, self).__init__(product_id)
 
+        parts = product_id.strip().split('_')
+        self.short_name = ''.join([parts[2], parts[1].split('-')[0]])
+        self.date_acquired = parts[3][1:]
+        self.date_produced = parts[5][1:]
+
+    def __repr__(self):
+        return 'ABI: {}'.format(self.__dict__)
+
 
 class Goes16(Abi):
     """Superclass for GOES-16 based ABI products"""
@@ -594,7 +602,10 @@ class SensorCONST(object):
                     ModisAqua13Q1, 'myd13q1.A2000072.h02v09.005.2008237032813'),
 
         'myd11a1': (r'^myd11a1\.a\d{7}\.h\d{2}v\d{2}\.00[5-6]\.\d{13}$',
-                    ModisAqua11A1, 'myd13q1.A2000072.h02v09.005.2008237032813')
+                    ModisAqua11A1, 'myd13q1.A2000072.h02v09.005.2008237032813'),
+
+        'goes16_cmip': (r'^or_abi-l2-cmip\w{1}-m\d{1}xxx_g16_s\d{14}_e\d{14}_c\d{14}',
+                        AbiGoes16Cmip, 'or_abi-l2-cmipf-m3xxx_g16_s20171851815381_e20171851826148_c20171851826216')
     }
 
 
