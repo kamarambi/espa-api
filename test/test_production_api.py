@@ -79,7 +79,7 @@ class TestProductionAPI(unittest.TestCase):
 
     def test_fetch_production_products_plot(self):
         order_id = self.mock_order.generate_testing_order(self.user_id)
-        self.mock_order.update_scenes(order_id, ('landsat', 'modis'), 'status', ['complete'])
+        self.mock_order.update_scenes(order_id, ('landsat', 'modis', 'abi'), 'status', ['complete'])
         order = Order.find(order_id)
         plot_scene = order.scenes({'name': 'plot'})[0]
         plot_scene.name = 'plot'
@@ -563,7 +563,7 @@ class TestProductionAPI(unittest.TestCase):
     def test_catch_orphaned_scenes(self):
         order_id = self.mock_order.generate_testing_order(self.user_id)
         # need scenes with statuses of 'queued'
-        self.mock_order.update_scenes(order_id, ('landsat', 'modis', 'plot'), 'status', ['queued'])
+        self.mock_order.update_scenes(order_id, ('landsat', 'modis', 'abi', 'plot'), 'status', ['queued'])
         response = production_provider.catch_orphaned_scenes()
         self.assertTrue(response)
 
