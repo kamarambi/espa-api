@@ -104,7 +104,7 @@ def build_base_order():
                      'L1TP_044030_19851028_20161004_01_T1': (['LT04_', 'LT05_', 'LE07_', 'LO08_', 'LC08_'],
                                                              ['tm4_collection', 'tm5_collection', 'etm7_collection', 'oli8_collection', 'olitirs8_collection']),
 
-                     'M3xxx_G16_s20171851815381_e20171851826148_c20171851826216': (['OR_ABI-L2-CMIPF-'],
+                     'M3C02_G16_s20171851815381_e20171851826148_c20171851826216': (['OR_ABI-L2-CMIPF-'],
                                                                                    ['goes16_cmip'])
                      }
 
