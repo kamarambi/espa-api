@@ -605,6 +605,7 @@ class SensorCONST(object):
         'goes16_cmip': (r'^or_abi-l2-cmip\w{1}-m\d{1}xxx_g16_s\d{14}_e\d{14}_c\d{14}',
                         AbiGoes16Cmip, 'or_abi-l2-cmipf-m3xxx_g16_s20171851815381_e20171851826148_c20171851826216')
     }
+    instances = {k: (re.compile(v[0]), v[1], v[2]) for k,v in instances.items()}
 
 
 def instance(product_id):
