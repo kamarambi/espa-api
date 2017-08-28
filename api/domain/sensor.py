@@ -27,8 +27,7 @@ class ProductNames(object):
         """
         # API product values
         product_names = ["source_metadata", "l1", "pixel_qa",
-                         "toa", "bt", "cloud",
-                         "toa_b2", "toa_b3", "toa_ndvi",
+                         "toa", "bt", "cloud", "toa_ndvi",
                          "sr", "lst", "swe",
                          "sr_ndvi", "sr_evi", "sr_savi", "sr_msavi", "sr_ndmi",
                          "sr_nbr", "sr_nbr2",
@@ -36,8 +35,7 @@ class ProductNames(object):
         prods = namedtuple('AllProducts', product_names)
         # Internal code names
         return prods("source_metadata", "l1", "pixel_qa",
-                     "toa", "bt", "cloud",
-                     "toa_b2", "toa_b3", "toa_ndvi",
+                     "toa", "bt", "cloud", "toa_ndvi",
                      "sr", "lst", "swe",
                      "sr_ndvi", "sr_evi", "sr_savi", "sr_msavi", "sr_ndmi",
                      "sr_nbr", "sr_nbr2",
@@ -107,7 +105,7 @@ class Goes16(Abi):
     """Superclass for GOES-16 based ABI products"""
     platform_name = 'goes16'
     sensor_name = 'abi'
-    products = [AllProducts.toa_b2, AllProducts.toa_b3, AllProducts.toa_ndvi]
+    products = [AllProducts.l1, AllProducts.toa_ndvi]
 
 
 class AbiCmip(Abi):
