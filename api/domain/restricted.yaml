@@ -85,6 +85,5 @@ etm7:
 
 goes16_cmip:
     role:
-        - toa_b2
-        - toa_b3
+        - l1
         - toa_ndvi

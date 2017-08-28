@@ -94,8 +94,8 @@ class Abi(SensorProduct):
 
         parts = product_id.strip().split('_')
         self.short_name = ''.join([parts[2], parts[1].split('-')[0]])
-        self.date_acquired = parts[3][1:]
-        self.date_produced = parts[5][1:]
+        self.date_acquired = parts[3][1:15]
+        self.date_produced = parts[5][1:15]
 
     def __repr__(self):
         return 'ABI: {}'.format(self.__dict__)
@@ -602,7 +602,7 @@ class SensorCONST(object):
         'myd11a1': (r'^myd11a1\.a\d{7}\.h\d{2}v\d{2}\.00[5-6]\.\d{13}$',
                     ModisAqua11A1, 'myd13q1.A2000072.h02v09.005.2008237032813'),
 
-        'goes16_cmip': (r'^or_abi-l2-cmip\w{1}-m\d{1}xxx_g16_s\d{14}_e\d{14}_c\d{14}',
+        'goes16_cmip': (r'^or_abi-l2-cmip\w{1}-m\d{1}c\d{2}_g16_s\d{14}_e\d{14}_c\d{14}',
                         AbiGoes16Cmip, 'or_abi-l2-cmipf-m3xxx_g16_s20171851815381_e20171851826148_c20171851826216')
     }
     instances = {k: (re.compile(v[0]), v[1], v[2]) for k,v in instances.items()}
@@ -627,6 +627,7 @@ def instance(product_id):
     _id = product_id.lower().strip()
     __modis_ext = Modis.input_filename_extension
     __landsat_ext = Landsat.input_filename_extension
+    __goes_ext = Goes16.input_filename_extension
 
     if _id.endswith(__modis_ext):
         index = _id.index(__modis_ext)
@@ -640,10 +641,22 @@ def instance(product_id):
         product_id = product_id[0:index]
         _id = _id[0:index]
 
+    elif __goes_ext in _id:
+        product_id = product_id.replace(__goes_ext, '')
+        _id = _id.replace(__goes_ext, '')
+
     instances = SensorCONST.instances
 
     for key in instances.iterkeys():
-        if re.match(instances[key][0], _id):
+        if key == 'goes16_cmip' and len(_id.split(';')) > 1:
+            # Same-time GOES-ABI "Imagery" products are separated by Channel-Number in the ID
+            #  and users are allowed to supply more than 1 (to produce NDVI)
+            res = [instance(_ix) for _ix in _id.split(';')]
+            res = len(set([getattr(r, 'date_acquired') for r in res])) == 1
+        else:
+            res = instances[key][0].match(_id)
+
+        if res:
             inst = instances[key][1](product_id.strip())
             inst.shortname = key
             return inst
