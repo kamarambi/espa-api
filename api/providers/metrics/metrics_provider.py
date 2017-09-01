@@ -68,5 +68,5 @@ class MetricsProvider(object):
         retval = dict(itertext='')
         info = self.aggregations.count('scenes', kwargs)
         info = sorted(info.items(), key=lambda x: x[1])
-        retval['itertext'] += '\n'.join(': '.join(i) for i in info[:10])
+        retval['itertext'] += '\n'.join(': '.join(map(str, i)) for i in info[:10])
         return retval
