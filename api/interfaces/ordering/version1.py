@@ -144,8 +144,8 @@ class API(object):
             order = self.validation.validate(order, user.username)
             # performs inventory check, raises InventoryException
             self.inventory.check(order, user.contactid)
-            # track metrics
-            self.metrics.collect(order)
+            # # track metrics
+            # self.metrics.collect(order)
             # capture the order
             response = self.ordering.place_order(order, user)
         except (InventoryException, ValidationException, InventoryConnectionException) as e:
