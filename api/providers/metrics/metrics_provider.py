@@ -27,6 +27,8 @@ class MetricsProvider(object):
         if activity == 'users':
             info_dict = self.gather_interfaces_info(sensor_type=['landsat', 'modis'], **period_rng)
             body += boilers['interfaces'].format(**info_dict)
+            info_dict = self.gather_top_info(sensor_type=['landsat', 'modis'], **period_rng)
+            body += boilers['top'].format(**info_dict)
 
         subject = 'ESPA STAFF | {} {} report'.format(period, activity)
         emails.Emails().send_email(email_list, subject=subject, body=body)
@@ -60,4 +62,11 @@ class MetricsProvider(object):
         retval['scenes_usgs'] = sum(v for k, v in info.items() if k.endswith('@usgs.gov'))
         retval['scenes_non'] = sum(v for k, v in info.items() if not k.endswith('@usgs.gov'))
 
+        return retval
+
+    def gather_top_info(self, **kwargs):
+        retval = dict(itertext='')
+        info = self.aggregations.count('scenes', kwargs)
+        info = sorted(info.items(), key=lambda x: x[1])
+        retval['itertext'] += '\n'.join(': '.join(i) for i in info[:10])
         return retval
