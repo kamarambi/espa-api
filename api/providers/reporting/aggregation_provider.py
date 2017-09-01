@@ -1,18 +1,37 @@
 import os
+import json
+import hashlib
 
 import yaml
 
 from api import __location__
 from api.util.dbconnect import DBConnectException, db_instance
 from api.system.logger import ilogger as logger
+from api.providers.caching.caching_provider import CachingProvider
 
 
 AGGREGATE_SQL_QUERIES = yaml.load(open(os.path.join(__location__, 'providers/reporting/aggregations.yaml')))
+cache = CachingProvider()
 
 
 class AggregationProvider(object):
     def __init__(self):
         pass
+
+    @staticmethod
+    def __query(query, args):
+        hashquery = query + json.dumps(args, sort_keys=True)
+        cache_key = hashlib.sha256(hashquery).hexdigest()
+        logger.debug(cache_key)
+        data = cache.get(cache_key)
+        if not data:
+            with db_instance() as db:
+                log_sql = db.cursor.mogrify(query, args)
+                logger.debug(log_sql)
+                db.select(query, args)
+                data = db.dictfetchall
+            cache.set(cache_key, data)
+        return data
 
     @staticmethod
     def format_response(dictfetchall, aggkey='email', aggname='count'):
@@ -30,8 +49,4 @@ class AggregationProvider(object):
 
         args_formatted = {k.upper(): v for k, v in args.items()}
         args_formatted = {k: v if not isinstance(v, list) else tuple(v) for k, v in args_formatted.items()}
-        with db_instance() as db:
-            log_sql = db.cursor.mogrify(query, args_formatted)
-            logger.debug(log_sql)
-            db.select(query, args_formatted)
-            return self.format_response(db.dictfetchall, aggkey=groupby, aggname=aggname)
+        return self.format_response(self.__query(query, args_formatted))
