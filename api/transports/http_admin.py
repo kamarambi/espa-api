@@ -207,3 +207,14 @@ class OrderResets(Resource):
         _to_state = _to_whole.split('_')[-1]
         return str(espa.error_to(orderid, _to_state))
 
+
+class TemporalAggregateReports(Resource):
+    decorators = [auth.login_required, whitelist, version_filter]
+
+    @staticmethod
+    def get(version, agg='count', group='orders'):
+        data = request.get_json(force=True)
+        resp = espa.fetch_aggregate_stats(agg, group, data)
+        if not isinstance(resp, (basestring, dict)):
+            resp = jsonify(resp)
+        return resp
