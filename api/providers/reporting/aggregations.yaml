@@ -1,0 +1,21 @@
+count:
+  orders:
+    groupby: "email"
+    query: >
+      SELECT o.email, count(distinct o.orderid) as "count"
+      FROM ordering_scene s
+      JOIN ordering_order o on o.id=s.order_id
+      WHERE o.order_date >= %(START_DATE)s
+        AND o.order_date <= %(END_DATE)s
+        AND s.sensor_type in %(SENSOR_TYPE)s
+      GROUP BY o.email;
+  scenes:
+    groupby: "email"
+    query: >
+      SELECT o.email, count(s.name) as "count"
+      FROM ordering_scene s
+      JOIN ordering_order o on o.id=s.order_id
+      WHERE o.order_date >= %(START_DATE)s
+        AND o.order_date <= %(END_DATE)s
+        AND s.sensor_type in %(SENSOR_TYPE)s
+      GROUP BY o.email;
