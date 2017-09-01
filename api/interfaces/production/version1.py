@@ -174,3 +174,18 @@ class API(object):
             response = default_error_message
         return response
 
+    def send_metrics_report(self, period, activity):
+        """ Handler to fetch statistics, and send an email to subscribed list
+
+        :param period: time period of statistics (daily, weekly, etc)
+        :param activity: type of metrics (user/machines)
+        :return: dict
+        """
+        try:
+            response = self.metrics.send_metrics_report(period, activity)
+        except:
+            logger.critical("ERR sending {} metrics {} report\ntrace: {}"
+                            .format(activity, period, traceback.format_exc()))
+            response = default_error_message
+        return response
+
