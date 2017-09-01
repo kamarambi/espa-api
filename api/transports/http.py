@@ -14,7 +14,7 @@ from http_user import Index, VersionInfo, AvailableProducts, ValidationInfo,\
 
 from http_production import ProductionVersion, ProductionConfiguration, ProductionOperations, ProductionManagement
 
-from http_admin import Reports, SystemStatus, OrderResets, ProductionStats
+from http_admin import Reports, SystemStatus, OrderResets, ProductionStats, TemporalAggregateReports
 from http_json import MessagesResponse, BadRequestResponse, SystemErrorResponse
 
 config = ConfigurationProvider()
@@ -98,6 +98,10 @@ transport_api.add_resource(Reports,
                            '/api/v<version>/statistics/<name>',
                            '/api/v<version>/aux_report/<group>/',
                            '/api/v<version>/aux_report/<group>/<year>')
+
+transport_api.add_resource(TemporalAggregateReports,
+                           '/api/v<version>/reporting/<agg>/<group>'
+                           )
 
 transport_api.add_resource(SystemStatus,
                            '/api/v<version>/system-status',
