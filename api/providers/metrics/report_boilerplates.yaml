@@ -1,0 +1,58 @@
+users:
+  download: |
+    ==========================================
+     On-demand - Total Download Info
+     Sensors: {sensors}
+    ==========================================
+    Total number of ordered scenes downloaded through ESPA order interface order links: {tot_dl}
+    Total volume of ordered scenes downloaded (GB): {tot_vol}
+  interfaces: >
+    ==========================================
+     On-demand - {who}
+    ==========================================
+     Total scenes ordered in the month for {who} interface: {scenes_month}
+     Number of scenes ordered in the month (USGS) for {who} interface: {scenes_usgs}
+     Number of scenes ordered in the month (non-USGS) for {who} interface: {scenes_non}
+     Total orders placed in the month for {who} interface: {orders_month}
+     Number of total orders placed in the month (USGS) for {who} interface: {orders_usgs}
+     Number of total orders placed in the month (non-USGS) for {who} interface: {orders_non}
+     Total number of unique On-Demand users for {who} interface: {tot_unique}
+  products: >
+    ==========================================
+     {status} by Product
+    ==========================================
+     Total Scenes: {total}
+     SR: {sr}
+     BT Thermal: {bt}
+     ToA: {toa}
+     Source: {l1}
+     Source Metadata: {source_metadata}
+     Customized Source: {customized_source_data}
+     SR EVI: {sr_evi}
+     SR MSAVI: {sr_msavi}
+     SR NBR: {sr_nbr}
+     SR NBR2: {sr_nbr2}
+     SR NDMI: {sr_ndmi}
+     SR NDVI: {sr_ndvi}
+     SR SAVI: {sr_savi}
+     CFMASK: {cloud}
+     PixelQA: {pixel_qa}
+     LST: {lst}
+     DSWE: {swe}
+     Plot: {plot}
+  top: >
+    ==========================================
+     Scenes ordered by Top Users
+    ==========================================
+    {itertext}
+machines:
+  scenes: >
+    ==========================================
+     Scenes processed by Machine Names
+    ==========================================
+    {itertext}
+  sensors: >
+    ==========================================
+     Scenes processed by Sensor Names
+    ==========================================
+    {itertext}
