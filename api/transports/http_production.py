@@ -119,3 +119,12 @@ class ProductionManagement(Resource):
         if 'reset-status' in request.url:
             resp = espa.reset_processing_status()
             return prep_response(resp)
+
+
+class ProductionMetricsReports(Resource):
+    decorators = [whitelist, version_filter]
+
+    @staticmethod
+    def get(version, period='daily', activity='user'):
+        resp = espa.send_metrics_report(period, activity)
+        return resp

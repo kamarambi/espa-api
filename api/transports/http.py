@@ -12,7 +12,8 @@ from api.system.logger import ilogger as logger
 from http_user import Index, VersionInfo, AvailableProducts, ValidationInfo,\
     ListOrders, Ordering, UserInfo, ItemStatus, BacklogStats, PublicSystemStatus
 
-from http_production import ProductionVersion, ProductionConfiguration, ProductionOperations, ProductionManagement
+from http_production import (ProductionVersion, ProductionConfiguration, ProductionOperations, ProductionManagement,
+                             ProductionMetricsReports)
 
 from http_admin import Reports, SystemStatus, OrderResets, ProductionStats, TemporalAggregateReports
 from http_json import MessagesResponse, BadRequestResponse, SystemErrorResponse
@@ -133,6 +134,10 @@ transport_api.add_resource(ProductionManagement,
 
 transport_api.add_resource(ProductionConfiguration,
                            '/production-api/v<version>/configuration/<key>')
+
+transport_api.add_resource(ProductionMetricsReports,
+                           '/production-api/v<version>/metrics/<activity>/<period>'
+                           )
 
 
 if __name__ == '__main__':
