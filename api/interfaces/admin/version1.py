@@ -14,6 +14,7 @@ class API(object):
 
         self.admin = self.providers.administration
         self.reporting = self.providers.reporting
+        self.aggregation = self.providers.aggregation
 
     @staticmethod
     def api_versions():
@@ -226,5 +227,21 @@ class API(object):
             response = self.reporting.missing_auxiliary_data(group, year)
         except:
             logger.critical("ERR retrieving auxiliary report for {} group, year {}\ntrace: {}".format(group, year, traceback.format_exc()))
+            response = default_error_message
+        return response
+
+    def fetch_aggregate_stats(self, aggregation, groupname, data):
+        """ Query the database using aggregations.yaml
+
+        :param aggregation: name of aggregation class method
+        :param groupname: type of aggregation (orders, scenes, etc)
+        :param data: query parameters
+        :return: dict
+        """
+        try:
+            response = getattr(self.aggregation, aggregation)(groupname, data)
+        except:
+            logger.critical("ERR retrieving aggregation report for {} {}: {}\ntrace: {}"
+                            .format(aggregation, groupname, data, traceback.format_exc()))
             response = default_error_message
         return response

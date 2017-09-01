@@ -10,6 +10,7 @@ from api.providers.validation import MockValidationProvider
 from api.providers.validation.validictory import ValidationProvider
 from api.providers.configuration.configuration_provider import ConfigurationProvider
 from api.providers.administration.administration_provider import AdministrationProvider
+from api.providers.reporting.aggregation_provider import AggregationProvider
 
 
 class DefaultProviders(object):
@@ -29,6 +30,8 @@ class DefaultProviders(object):
     reporting = ReportingProvider()
 
     administration = AdministrationProvider()
+
+    aggregation = AggregationProvider()
 
 
 class MockProviders(object):
