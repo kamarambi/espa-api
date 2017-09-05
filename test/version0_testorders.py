@@ -21,7 +21,13 @@ good_test_projections = {'aea': {'standard_parallel_1': 29.5,
                          'ps': {'longitudinal_pole': 0,
                                 'latitude_true_scale': 75,
                                 'false_easting': 0,
-                                'false_northing': 0}}
+                                'false_northing': 0},
+                         'geos': {'height': 35786023,
+                                  'sub_satellite_longitude': -89.5,
+                                  'sweep_axis': 'x',
+                                  'false_easting': 0,
+                                  'false_northing': 0,
+                                  'ellipsoid': 'grs80'}}
 
 
 def build_base_order():
