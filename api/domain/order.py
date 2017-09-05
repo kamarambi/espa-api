@@ -639,7 +639,7 @@ class OptionsConversion(object):
                 ('false_easting', 'false_easting', None),
                 ('false_northing', 'false_northing', None)]
 
-    goes_map = [('sub_satellite_longitude', 'sub_satellite_longitude', None),
+    geos_map = [('sub_satellite_longitude', 'sub_satellite_longitude', None),
                 ('sweep_axis', 'sweep_axis', None),
                 ('height', 'height', None),
                 ('false_easting', 'false_easting', None),
