@@ -639,13 +639,21 @@ class OptionsConversion(object):
                 ('false_easting', 'false_easting', None),
                 ('false_northing', 'false_northing', None)]
 
+    goes_map = [('sub_satellite_longitude', 'sub_satellite_longitude', None),
+                ('sweep_axis', 'sweep_axis', None),
+                ('height', 'height', None),
+                ('false_easting', 'false_easting', None),
+                ('false_northing', 'false_northing', None),
+                ('ellipsoid', 'ellipsoid', None)]
+
     lonlat_map = [(None, None, None)]
 
     proj_names_map = [('target_projection', 'aea', aea_map),
                       ('target_projection', 'ps', ps_map),
                       ('target_projection', 'utm', utm_map),
                       ('target_projection', 'lonlat', lonlat_map),
-                      ('target_projection', 'sinu', sinu_map)]
+                      ('target_projection', 'sinu', sinu_map),
+                      ('target_projection', 'geos', geos_map)]
 
     ext_map = [('image_extents_units', 'units', None),
                ('minx', 'west', None),
