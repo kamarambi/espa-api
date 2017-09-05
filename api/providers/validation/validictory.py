@@ -429,6 +429,36 @@ class OrderValidatorV0(validictory.SchemaValidator):
                    .format(max=self._itemcount[key]['max'], key=key))
             self._errors.append(msg)
 
+    def validate_multichannel_products(self, x, fieldname, schema, path, options=None):
+        """
+        Check to validate that a multi-channel (Red/NIR) order contains valid multi-channel IDs
+        """
+        criteria = [self.data_source.get(k) for k in options.keys()]
+        if not any(criteria):
+            return
+        value = x.get(fieldname)
+
+        if value is not None:
+            if callable(options):
+                options = options(x)
+            for sensor in options.keys():
+                if sensor not in value:
+                    continue
+                products = value[sensor].get('products')
+                restricted = options[sensor]
+                if isinstance(restricted, basestring):
+                    restricted = [restricted]
+                requested_products = set(restricted).union(set(products))
+                if requested_products:
+                    inputs = value[sensor].get('inputs')
+                    instances = [getattr(sn.instance(i), 'multichannel') for i in inputs]
+                    if not all(instances):
+                        delta = list(set([i for i, s in zip(inputs, instances) if not s]))
+                        msg = ("Multichannel required: {} products for {} "
+                               "requires multiple inputs per acquisition."
+                               .format(restricted, sensor, options))
+                        self._errors.append(msg)
+
 
 class BaseValidationSchema(object):
     formats = ['gtiff', 'hdf-eos2', 'envi', 'netcdf']
@@ -531,6 +561,7 @@ class BaseValidationSchema(object):
     request_schema = {'type': 'object',
                       'set_ItemCount': ('inputs', 5000),
                       'extents': 200000000,
+                      'multichannel_products': {'goes16_cmip': 'toa_ndvi'},
                       'properties': {'projection': {'properties': projections,
                                                     'type': 'object',
                                                     # 'enum_keys': self.projections.keys(),
