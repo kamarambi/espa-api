@@ -96,6 +96,7 @@ class Abi(SensorProduct):
         self.short_name = ''.join([parts[2], parts[1].split('-')[0]])
         self.date_acquired = parts[3][1:15]
         self.date_produced = parts[5][1:15]
+        self.multichannel = len(product_id.split(';')) > 1
 
     def __repr__(self):
         return 'ABI: {}'.format(self.__dict__)
