@@ -488,7 +488,25 @@ class BaseValidationSchema(object):
                                          'false_easting': {'type': 'number',
                                                              'required': True},
                                          'false_northing': {'type': 'number',
-                                                            'required': True}}}}
+                                                            'required': True}}},
+                   'geos': {
+                       'type': 'object',
+                       'properties': {'height': {'type': 'number',
+                                                 'required': True},
+                                      'sub_satellite_longitude': {'type': 'number',
+                                                                  'required': True,
+                                                                  'minimum': -180,
+                                                                  'maximum': 180},
+                                      'sweep_axis': {'type': 'string',
+                                                     'required': True,
+                                                     'enum': ['x', 'y']},
+                                      'false_easting': {'type': 'number',
+                                                        'required': True},
+                                      'false_northing': {'type': 'number',
+                                                         'required': True},
+                                      'ellipsoid': {'type': 'string',
+                                                    'required': True,
+                                                    'enum': ['wgs84', 'grs80', 'sphere']}}}}
 
     extents = {'north': {'type': 'number',
                          'required': True},
