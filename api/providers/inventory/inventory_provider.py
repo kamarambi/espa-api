@@ -28,6 +28,7 @@ class InventoryProviderV0(InventoryInterfaceV0):
                 l1 = inst.l1_provider
 
             if l1 == 'dmid':
+                if key == 'goes16_cmip': continue  # FIXME: coordination w/DMID required ===============================
                 lta_ls.extend(order[key]['inputs'])
             elif l1 == 'lpdaac':
                 lpdaac_ls.extend(order[key]['inputs'])
