@@ -632,7 +632,7 @@ class ValidationProvider(ValidationInterfaceV0):
 
                 prod = sn.instance(item1)
 
-                if isinstance(prod, sn.Landsat):
+                if isinstance(prod, (sn.Landsat, sn.Abi)):
                     order[key]['inputs'] = [s.upper() for s in order[key]['inputs']]
                 elif isinstance(prod, sn.Modis):
                     order[key]['inputs'] = ['.'.join([p[0].upper(),
