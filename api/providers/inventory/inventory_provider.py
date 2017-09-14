@@ -28,13 +28,18 @@ class InventoryProviderV0(InventoryInterfaceV0):
                 l1 = inst.l1_provider
 
             if l1 == 'dmid':
-                if key == 'goes16_cmip': continue  # FIXME: coordination w/DMID required ===============================
-                lta_ls.extend(order[key]['inputs'])
+                if getattr(inst, 'multichannel', None):
+                    # Multichannel inputs are composites from many IDs
+                    flat_list = [i for inp in order[key]['inputs'] for i in inp.split(';')]
+                    print('@'* 70 + '{}'.format(flat_list))
+                    lta_ls.extend(flat_list)
+                else:
+                    lta_ls.extend(order[key]['inputs'])
             elif l1 == 'lpdaac':
                 lpdaac_ls.extend(order[key]['inputs'])
 
         if lta_ls:
-            if 'LANDSAT' in os.getenv('ESPA_M2M_MODE', '') and inventory.available():
+            if 'LANDSAT' in os.getenv('ESPA_M2M_MODE', ''): # and inventory.available():
                 results.update(self.check_dmid(lta_ls, contactid))
             else:
                 if not lta.check_lta_available():

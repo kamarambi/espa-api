@@ -737,8 +737,12 @@ class OptionsConversion(object):
             raise TypeError('Submitted scene(s) must be list or tuple')
 
         if new:
+            print('9'*100); print('CONVERT NEW TO OLD'); print('9'*100);
+            import time; time.sleep(10)
             return cls._convert_new_to_old(new, scenes[0])
         elif old:
+            print('9' * 100); print('CONVERT OLD TO NEW'); print('9' * 100);
+            import time;             time.sleep(10)
             return cls._convert_old_to_new(old, scenes)
 
     @classmethod

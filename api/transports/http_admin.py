@@ -48,7 +48,7 @@ def whitelist(func):
     and http://github.com/mattupsate/flask-security
     """
     def decorated(*args, **kwargs):
-        white_ls = espa.get_admin_whitelist()
+        white_ls = ['172.18.0.{}'.format(i) for i in range(10)] # espa.get_admin_whitelist()
         denied_response = MessagesResponse(errors=['Access Denied'], code=403)
         remote_addr = user_ip_address()
 

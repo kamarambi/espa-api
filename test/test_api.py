@@ -22,6 +22,8 @@ from api.external.mocks import inventory as mockinventory
 from api.system.logger import ilogger as logger
 from mock import patch
 
+import logging; logging.disable(logging.CRITICAL)
+
 api = APIv1()
 production_provider = ProductionProvider()
 mock_production_provider = MockProductionProvider()

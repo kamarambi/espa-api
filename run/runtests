@@ -6,7 +6,9 @@ if [[ ! -e "$ESPA_CONFIG_PATH" ]]; then
 fi
 
 #python -m unittest discover test
-nose2 --log-level ERROR --fail-fast --with-coverage
+#nose2 --log-level ERROR --fail-fast --with-coverage
+#python -m unittest test.test_api.TestValidation.test_validate_good_order
+python -m unittest -f test.test_api.TestValidation.test_invalidate_multichannel_products
 
 # flake8 api
 # pylint api

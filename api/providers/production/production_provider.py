@@ -228,7 +228,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
 
         return True
 
-    def update_status(self, name, orderid, processing_loc=None, status=None):
+    def update_status(self, scene_id, orderid, processing_loc=None, status=None):
         """
         Update the status for a scene give its name, and order_id
         :param name: name of scene to update
@@ -238,7 +238,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         :return: True
         """
         order = Order.find(orderid)
-        scene = Scene.by_name_orderid(name, order.id)
+        scene = Scene.find(int(scene_id))
         if order.status == 'cancelled':
             Scene.bulk_update([scene.id], Scene.cancel_opts())
             return False
@@ -338,7 +338,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
 
         return True
 
-    def set_product_error(self, name, orderid, processing_loc, error):
+    def set_product_error(self, scene_id, orderid, processing_loc, error):
         """
         Marks a scene in error and accepts the log file contents
         :param name: name of scene to update
@@ -348,11 +348,11 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         :return: True
         """
         order = Order.find(orderid)
-        product = Scene.by_name_orderid(name, order.id)
+        product = Scene.find(int(scene_id))
         #attempt to determine the disposition of this error
         resolution = None
-        if name != 'plot':
-            resolution = errors.resolve(error, name)
+        if product.name != 'plot':
+            resolution = errors.resolve(error, product.name)
 
         logger.info("\n\n*** set_product_error: orderid {0}, "
                     "scene id {1} , scene name {2},\n"
@@ -383,7 +383,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
                 except Exception as e:
                     logger.info('Exception setting product.id {} {} '
                                  'to retry: {}'
-                                 .format(product.id, name, e))
+                                 .format(product.id, product.name, e))
                     product.status = 'error'
                     product.processing_location = processing_loc
                     product.log_file_contents = error
@@ -520,17 +520,18 @@ class ProductionProvider(ProductionProviderInterfaceV0):
                             sensor.instance(result['name']).shortname)
             usage = orderid
             usage_by_cid[(cid, orderid, stype)] = (usage, result)
-            names_by_cid.setdefault((cid, orderid, stype), []).append(result['name'])
+            names_by_cid.setdefault((cid, orderid, stype), {}).update({result['id']: result['name'].split(';')})
 
         #this will be returned to the caller
         results = []
-        for (cid, orderid, stype), name_list in names_by_cid.items():
+        for (cid, orderid, stype), id_name_list in names_by_cid.items():
+            name_list = [i for x in id_name_list.values() for i in x]
             logger.warn('Retrieving %s %s download urls for cid:%s orderid:%s',
                         len(name_list), stype, cid, orderid)
             (usage, item) = usage_by_cid[(cid, orderid, stype)]
 
             input_urls = dict()
-            if stype in ('landsat', 'modis'):
+            if stype in ('landsat', 'modis', 'abi'):
                 start = datetime.datetime.now()
                 auth_token = inventory.get_cached_session()
                 entity_map = inventory.get_cached_convert(auth_token, name_list)
@@ -542,28 +543,32 @@ class ProductionProvider(ProductionProviderInterfaceV0):
                              .format(interval.seconds))
                 logger.warn('Retrieved {0} urls for cid:{1}'.format(len(input_urls), cid))
 
-            for scene_id in name_list:
-                dload_url = None
-                if stype in ('landsat', 'modis'):
+            id_url_map = {}
+            for pid, names in id_name_list.items():
+                id_url_map.setdefault(pid, {}).update({i: input_urls.get(i) for i in input_urls if i in names})
 
-                    dload_url = input_urls.get(scene_id)
-                    if dload_url:
+            for uuid in id_url_map:
+                dload_urls = None
+                if stype in ('landsat', 'modis', 'abi'):
+
+                    dload_urls = id_url_map.get(uuid)
+                    if dload_urls:
                         if encode_urls:
-                            dload_url = urllib.quote(dload_url, '')
+                            dload_urls = {n: urllib.quote(url, '') for n, url in dload_urls.items()}
 
-                if scene_id == 'plot':
+                if stype == 'plot':
                     options = {}
                 elif config.get('convertprodopts') == 'True':
                     options = OptionsConversion.convert(new=item['product_opts'],
                                                         scenes=[item['name']])
                 else:
                     # Need to strip out everything not directly related to the scene
-                    options = self.strip_unrelated(scene_id, item['product_opts'])
+                    options = self.strip_unrelated(dload_urls.keys()[0], item['product_opts'])
 
                 result = {
                     'orderid': orderid,
                     'product_type': stype,
-                    'scene': scene_id,
+                    'uuid': uuid,
                     'priority': item['priority'],
                     'options': options
                 }
@@ -571,19 +576,19 @@ class ProductionProvider(ProductionProviderInterfaceV0):
                 if stype == 'plot':
                     # no dload url for plot items, just append it
                     results.append(result)
-                elif dload_url is not None:
-                    result['download_url'] = dload_url
+                elif dload_urls is not None:
+                    result['input_urls'] = dload_urls
                     results.append(result)
                 else:
                     logger.error('dload_url for %s in order %s was None, '
-                                 'skipping...', scene_id, orderid)
+                                 'skipping...', uuid, orderid)
         return results
 
 
     def get_products_to_process(self, record_limit=500,
                                 for_user=None,
                                 priority=None,
-                                product_types=['landsat', 'modis'],
+                                product_types=['landsat', 'modis', 'abi'],
                                 encode_urls=False):
         """
         Find scenes that are oncache and return them as properly formatted
@@ -613,6 +618,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         buff.write('GROUP BY u.email) ')
         buff.write('SELECT ')
         buff.write('u.contactid, ')
+        buff.write('s.id, ')
         buff.write('s.name, ')
         buff.write('s.sensor_type, ')
         buff.write('o.orderid, ')
@@ -659,7 +665,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         #           'product_opts', 'priority', 'order_date', 'running']
         query_results = db.fetcharr
 
-        if 'URLS' in os.getenv('ESPA_M2M_MODE', '') and inventory.available():
+        if 'URLS' in os.getenv('ESPA_M2M_MODE', ''): # and inventory.available():
             logger.info('@@ URLS: FETCH via MACHINE-TO-MACHINE')
             results = self.parse_urls_m2m(query_results)
             logger.info('@@ URLS: COMPLETE via MACHINE-TO-MACHINE')
@@ -1137,6 +1143,41 @@ class ProductionProvider(ProductionProviderInterfaceV0):
 
         return True
 
+    def handle_submitted_abi_products(self, abi_products):
+        """
+        Moves all submitted GOES-ABI products to oncache if true
+        :return: bool
+        """
+        # if 'ABI' in os.getenv('ESPA_M2M_MODE', '') and not inventory.available():
+        #     logger.critical('M2M down. Skip handle_submitted_abi_products...')
+        #     return False
+        if 'ABI' not in os.getenv('ESPA_M2M_MODE', ''):
+            logger.warning('ABI is expected to require M2M connectivity')
+            return False
+        logger.info("Handling submitted abi products...")
+        print('0'*100)
+        logger.warn("Found {0} submitted abi products".format(len(abi_products)))
+
+        if len(abi_products) > 0:
+            # TODO: This shouldn't be necessary if everything uses m2m...
+            prod_name_list = [i for p in abi_products for i in p.name.split(';')]
+            token = inventory.get_cached_session()
+            results = inventory.get_cached_verify_scenes(token, prod_name_list)
+            print('&'*100);print(results);print('&'*100)
+
+            valid = list(set(r for r,v in results.items() if v))
+            invalid = list(set(prod_name_list)-set(valid))
+
+            available_ids = [p.id for p in abi_products if all([i in valid for i in p.name.split(';')])]
+            if len(available_ids):
+                Scene.bulk_update(available_ids, {'status': 'oncache', 'note': "''"})
+
+            invalids = [p for p in abi_products if p.id not in available_ids]
+            if len(invalids):
+                self.set_products_unavailable(invalids, 'No longer found in the archive, please search again')
+
+        return True
+
     def handle_submitted_plot_products(self, plot_scenes):
         """
         Moves plot products from submitted to oncache status once all their underlying rasters are complete
@@ -1365,6 +1406,9 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         scenes = Scene.where({'status': 'submitted', 'sensor_type': 'modis', 'order_id': pending_orders})
         self.handle_submitted_modis_products(scenes)
 
+        scenes = Scene.where({'status': 'submitted', 'sensor_type': 'abi', 'order_id': pending_orders})
+        self.handle_submitted_abi_products(scenes)
+
         scenes = Scene.where({'status': 'submitted', 'sensor_type': 'plot', 'order_id': pending_orders})
         self.handle_submitted_plot_products(scenes)
 
@@ -1378,7 +1422,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         result = cache.get(cache_key)
 
         # dont run this unless the cached lock has expired
-        if result is None:
+        if False: #result is None:
             logger.info('Purge lock expired... running')
 
             # first thing, populate the cached lock field
@@ -1412,19 +1456,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
 
     @staticmethod
     def production_whitelist():
-        cache_key = 'prod_whitelist'
-        prodlist = cache.get(cache_key)
-        if prodlist is None:
-            logger.info("Regenerating production whitelist...")
-            # timeout in 6 hours
-            timeout = 60 * 60 * 6
-            prodlist = list(['127.0.0.1', socket.gethostbyname(socket.gethostname())])
-            try:
-                prodlist.append(hadoop_handler.master_ip())
-                prodlist.extend(hadoop_handler.slave_ips())
-            except BaseException, e:
-                logger.exception('Could not access hadoop!')
-            cache.set(cache_key, prodlist, timeout)
+        prodlist = ['172.18.0.{}'.format(i) for i in range(10)]
 
         return prodlist
 

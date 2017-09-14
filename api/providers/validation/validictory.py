@@ -663,7 +663,7 @@ class ValidationProvider(ValidationInterfaceV0):
 
                 prod = sn.instance(item1)
 
-                if isinstance(prod, (sn.Landsat, sn.Abi)):
+                if isinstance(prod, sn.Landsat):
                     order[key]['inputs'] = [s.upper() for s in order[key]['inputs']]
                 elif isinstance(prod, sn.Modis):
                     order[key]['inputs'] = ['.'.join([p[0].upper(),
@@ -671,6 +671,14 @@ class ValidationProvider(ValidationInterfaceV0):
                                                       p[2].lower(),
                                                       p[3],
                                                       p[4]]) for p in [s.split('.') for s in order[key]['inputs']]]
+                elif isinstance(prod, sn.Abi):
+                    order[key]['inputs'] = [';'.join(['_'.join([p[0].upper(),
+                                                      p[1].upper(),
+                                                      p[2].upper(),
+                                                      p[3].lower(),
+                                                      p[4].lower(),
+                                                      p[5].lower()]) for p in [x.split('_') for x in i.split(';')]])
+                                            for i in order[key]['inputs']]
 
                 if stats:
                     if 'stats' not in order[key]['products']:

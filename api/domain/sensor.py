@@ -606,7 +606,6 @@ class SensorCONST(object):
         'goes16_cmip': (r'^or_abi-l2-cmip\w{1}-m\d{1}c\d{2}_g16_s\d{14}_e\d{14}_c\d{14}',
                         AbiGoes16Cmip, 'or_abi-l2-cmipf-m3c02_g16_s20171851815381_e20171851826148_c20171851826216')
     }
-    instances = {k: (re.compile(v[0]), v[1], v[2]) for k,v in instances.items()}
 
 
 def instance(product_id):
@@ -655,7 +654,7 @@ def instance(product_id):
             res = [instance(_ix) for _ix in _id.split(';')]
             res = len(set([getattr(r, 'date_acquired') for r in res])) == 1
         else:
-            res = instances[key][0].match(_id)
+            res = re.match(instances[key][0], _id)
 
         if res:
             inst = instances[key][1](product_id.strip())

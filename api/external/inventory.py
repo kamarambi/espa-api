@@ -1,6 +1,8 @@
 """
 TODO: Replaces lta.py
 """
+import os
+import yaml
 import json
 import urllib
 import traceback
@@ -11,6 +13,7 @@ import re
 import requests
 import memcache
 
+from api import __location__
 from api.domain import sensor
 from api.providers.configuration.configuration_provider import (
     ConfigurationProvider)
@@ -36,6 +39,7 @@ class LTAService(object):
         self.api_version = config.get('bulk.{0}.json.version'.format(mode))
         self.agent = config.get('bulk.{0}.json.username'.format(mode))
         self.agent_wurd = config.get('bulk.{0}.json.password'.format(mode))
+        logger.debug('CONFIG VALUE: {}'.format(config.url_for('earthexplorer.json')))
         self.base_url = config.url_for('earthexplorer.json')
         self.current_user = current_user  # CONTACT ID
         self.token = token
@@ -96,6 +100,10 @@ class LTAService(object):
         :param verb: HTTP method of GET or POST
         :return:
         """
+        if data.get('datasetName') == 'GOES16_ABI_CMIP':  # FIXME: SPECIAL MOCKING OF GOES-ABI DATASET <<<<<<<<<<<<<<<<<
+            return self._override_request(endpoint, data, verb)
+        if endpoint == 'userContext':
+            return {'data': True}
         url = self.base_url + endpoint
         if data:
             data = {'jsonRequest': json.dumps(data)}
@@ -106,6 +114,21 @@ class LTAService(object):
         response = getattr(requests, verb)(url, data=data)
         logger.debug('[RESPONSE] %s\n%s', response, response.content)
         return self._parse(response)
+
+    def _override_request(self, endpoint, data=None, verb='post'):
+        # FIXME: SPECIAL MOCKING OF GOES-ABI DATASET <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        path_to_inventory = os.path.join(__location__, 'external/GOES_ABI_TEMPORARY_INVENTORY.yaml')
+        fake_inventory = {k: v.strip() for k,v in yaml.load(open(path_to_inventory).read()).items()}
+        print('& _override_request: {}'.format(endpoint))
+        print(fake_inventory)
+        ikey = {'idLookup': 'idList', 'download': 'entityIds'}[endpoint]
+        input_list = data[ikey]
+        foobar = {'idLookup': lambda x: x if x in fake_inventory else None,
+                  'download': lambda x: fake_inventory.get(x)}
+        data = ({i: foobar[endpoint](i) for i in input_list} if endpoint == 'idLookup'
+                    else [{'entityId': i, 'url': foobar[endpoint](i)} for i in input_list])
+        print('!'*100); print(data); print('!'*100)
+        return {'data': data, 'error': None}
 
     def _get(self, endpoint, data=None):
         return self._request(endpoint, data, verb='get')
@@ -412,7 +435,7 @@ def clear_user_context(token):
 
 
 def get_cached_session():
-    return LTACachedService().cached_login()
+    return 'hellomoto'  # LTACachedService().cached_login()
 
 
 def available():

@@ -36,6 +36,7 @@ class ConfigurationProvider(ConfigurationProviderInterfaceV0):
 
     def url_for(self, service_name):
         key = "url.{0}.{1}".format(self.mode, service_name)
+        print('#'*50 + key)
         current = self._retrieve_config()
 
         return current.get(key)
