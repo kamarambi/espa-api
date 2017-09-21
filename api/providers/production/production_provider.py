@@ -74,7 +74,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
 
         return True
 
-    def mark_product_complete(self, name, orderid, processing_loc=None,
+    def mark_product_complete(self, scene_id, orderid, processing_loc=None,
                               completed_file_location=None,
                               destination_cksum_file=None,
                               log_file_contents=None):
@@ -88,27 +88,24 @@ class ProductionProvider(ProductionProviderInterfaceV0):
         :param log_file_contents: log file contents from processing
         :return: True
         """
-        order_status = Scene.get('ordering_order.status', name, orderid)
+        order = Order.find(orderid)
+        scene = Scene.find(int(scene_id))
 
-        order_id = Scene.get('order_id', name, orderid)
-        order_source = Scene.get('order_source', name, orderid)
         base_url = config.url_for('distribution.cache')
 
         product_file = os.path.basename(completed_file_location)
         cksum_file = os.path.basename(destination_cksum_file)
 
         product_dload_url = ('{}/orders/{}/{}'
-                             .format(base_url, orderid, product_file))
+                             .format(base_url, order.orderid, product_file))
         cksum_download_url = ('{}/orders/{}/{}'
-                              .format(base_url, orderid, cksum_file))
+                              .format(base_url, order.orderid, cksum_file))
 
-        scene = Scene.by_name_orderid(name, order_id)
-
-        if order_status == 'cancelled':
+        if order.status == 'cancelled':
             if os.path.exists(completed_file_location):
                 scene.download_size = os.path.getsize(completed_file_location)
-                onlinecache.delete(orderid, filename=product_file)
-                onlinecache.delete(orderid, filename=cksum_file)
+                onlinecache.delete(order.orderid, filename=product_file)
+                onlinecache.delete(order.orderid, filename=cksum_file)
             else:
                 logger.critical('ERR file was not found: {}'
                                 .format(completed_file_location))
@@ -131,12 +128,10 @@ class ProductionProvider(ProductionProviderInterfaceV0):
             logger.info("mark_product_complete could not find completed file location {}, marking it zero for now...".format(completed_file_location))
             scene.download_size = 0
 
-        if order_source == 'ee':
-            # update EE
-            ee_order_id = Scene.get('ee_order_id', name, orderid)
-            ee_unit_id = Scene.get('ee_unit_id', name, orderid)
+        if order.order_source == 'ee':
+            # update TRAM
             try:
-                lta.update_order_status(ee_order_id, ee_unit_id, 'C')
+                lta.update_order_status(order.ee_order_id, scene.ee_unit_id, 'C')
             except Exception, e:
                 cache_key = 'lta.cannot.update'
                 lta_conn_failed_10mins = cache.get(cache_key)

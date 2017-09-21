@@ -88,15 +88,44 @@ class Abi(SensorProduct):
     """Superclass for all Advanced-Baseline-Imager (ABI) products"""
     input_filename_extension = '.nc'
     l1_provider = 'dmid'
+    default_rows = None
+    default_cols = None
+    default_resolution_m = None
+    default_resolution_dd = None
+    region = None
 
     def __init__(self, product_id):
         super(Abi, self).__init__(product_id)
 
         parts = product_id.strip().split('_')
         self.short_name = ''.join([parts[2], parts[1].split('-')[0]])
+        self.region = {'cmipc': 'conus', 'cmipf': 'full_disk'}[parts[1].split('-')[2].lower()]
         self.date_acquired = parts[3][1:15]
         self.date_produced = parts[5][1:15]
         self.multichannel = len(product_id.split(';')) > 1
+        if not self.multichannel:
+            self.band = parts[1][-3:].lower()
+
+        resolutions_m = {"c02": 500, "c03": 1000}
+        resolutions_dd = {"c02": 0.00449, "c03": 0.00898}
+
+        if self.region == "full_disk":
+            expected_rows = {"c02": 36227, "c03": 18114}
+            expected_cols = {"c02": 36214, "c03": 18107}
+        elif self.region == "conus":
+            expected_rows = {"c02": 8635, "c03": 4318}
+            expected_cols = {"c02": 20365, "c03": 10183}
+
+        if self.multichannel:
+            self.default_rows = max(expected_rows.values())
+            self.default_cols = max(expected_cols.values())
+            self.default_resolution_m = min(resolutions_m.values())
+            self.default_resolution_dd = min(resolutions_dd.values())
+        else:
+            self.default_rows = expected_rows[self.band]
+            self.default_cols = expected_cols[self.band]
+            self.default_resolution_m = resolutions_m[self.band]
+            self.default_resolution_dd = resolutions_dd[self.band]
 
     def __repr__(self):
         return 'ABI: {}'.format(self.__dict__)
@@ -111,8 +140,7 @@ class Goes16(Abi):
 
 class AbiCmip(Abi):
     """models ABI Cloud/Moisture Imagery Product (CMIP)"""
-    default_resolution_m = 1000
-    default_resolution_dd = 0.0089831
+    pass
 
 
 class AbiGoes16Cmip(Goes16, AbiCmip):

@@ -313,7 +313,9 @@ class Order(object):
              'include_lst': False,  # land surface temperature
              'include_solr_index': False,  # solr search index record
              'include_cfmask': False,  # (deprecated) not
-             'include_statistics': False}  # should we do stats & plots?
+             'include_statistics': False,  # should we do stats & plots?
+             'include_toa_ndvi': False, # GOES-ABI TOA NDVI (Ch3, Ch2)
+        }
 
         return o
 
@@ -685,7 +687,8 @@ class OptionsConversion(object):
                 ('include_sr_evi', 'sr_evi', True),
                 ('include_lst', 'lst', True),
                 ('include_cfmask', 'cloud', True),
-                ('include_pixel_qa', 'pixel_qa', True)]
+                ('include_pixel_qa', 'pixel_qa', True),
+                ('include_toa_ndvi', 'toa_ndvi', True)]
 
     resample_map = [('cubic', 'cc', None),
                     ('near', 'nn', None),

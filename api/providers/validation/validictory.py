@@ -33,6 +33,10 @@ class OrderValidatorV0(validictory.SchemaValidator):
         self._itemcount = {}
         super(OrderValidatorV0, self).validate(data, schema)
 
+    def validate_goes16_cmip(self, x, fieldname, schema, path, pixel_count=200000000):
+        print('%'*100)
+        print('TODO: need to enforce pixel limits on all GOES orders')
+
     def validate_extents(self, x, fieldname, schema, path, pixel_count=200000000):
         if 'resize' not in self.data_source and 'image_extents' not in self.data_source:
             return
@@ -117,9 +121,9 @@ class OrderValidatorV0(validictory.SchemaValidator):
             for sensor, sensor_info in sn.SensorCONST.instances.items():
                 if sensor in self.data_source and 'inputs' in self.data_source[sensor]:
                     sensor_obj = sensor_info[1]
-                    def_res = sensor_obj.default_resolution_m
-                    def_xmax = sensor_obj.default_cols * def_res
-                    def_ymax = sensor_obj.default_rows * def_res
+                    def_res = min(sensor_obj(i).default_resolution_m for i in self.data_source[sensor]['inputs'])
+                    def_xmax = max(sensor_obj(i).default_cols * def_res for i in self.data_source[sensor]['inputs'])
+                    def_ymax = max(sensor_obj(i).default_rows * def_res for i in self.data_source[sensor]['inputs'])
 
                     # image_extents or resize is missing, can't be both at this stage
                     # which means we need to substitute default values in
@@ -139,11 +143,11 @@ class OrderValidatorV0(validictory.SchemaValidator):
         cmin = min(count_ls)
         if cmax > pixel_count:
             msg = ('{}:{} pixel count is greater than maximum size of {}'
-                   ' pixels'.format(path, fieldname, cmax))
+                   ' pixels'.format(path, fieldname, pixel_count))
             self._errors.append(msg)
         elif cmin < 1:
             msg = ('{}:{} pixel count value falls below acceptable threshold'
-                   ' of 1 pixel'.format(path, fieldname, cmin))
+                   ' of 1 pixel'.format(path, fieldname))
             self._errors.append(msg)
 
     #     if 'image_extents' in self.data_source:
@@ -173,6 +177,9 @@ class OrderValidatorV0(validictory.SchemaValidator):
     def calc_extent(xmax, ymax, xmin, ymin, extent_units, resize_units, resize_pixel):
         """Calculate a good estimate of the number of pixels contained
          in an extent"""
+
+        print('CALC EXTENT: {}'.format((xmax, ymax,xmin,ymin)))
+        print('CALC EXTENT: {}'.format((extent_units,resize_units,resize_pixel)))
         max_count = 0
 
         xdif = 0
@@ -194,6 +201,7 @@ class OrderValidatorV0(validictory.SchemaValidator):
             else:
                 resize_pixel *= 111317.254174397
 
+        print('NUMBER OF PIXELS: {}'.format(int(xdif * ydif / resize_pixel ** 2)))
         return int(xdif * ydif / resize_pixel ** 2)
 
     def validate_single_obj(self, x, fieldname, schema, path, single=False):

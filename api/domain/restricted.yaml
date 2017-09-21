@@ -4,6 +4,7 @@ all:
         - lst
         - swe
         - cloud
+        - goes16_cmip
         - restricted_prod
     ordering:
         - olitirs8
