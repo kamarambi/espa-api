@@ -29,7 +29,7 @@ a request to `https://espa.cr.usgs.gov/api/v1/available-products`
 | GOES16 CMIP  | :x: | :x: | :x: |
 
 ### ESPA Higher-Level CDR/ECV Outputs
-|  | TOA | SR | BT | LST | DSWE | CLOUD
+|  | TOA | SR | BT | ST | DSWE | CLOUD
 |:------------- |:------------- |:------------- |:------------- |:------------- |:------------- |:------------- |
 | Landsat 4 TM | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | Landsat 5 TM | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |

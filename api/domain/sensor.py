@@ -18,30 +18,48 @@ from api.util import julian_date_check, julian_from_date
 with open(os.path.join(__location__, 'domain/restricted.yaml')) as f:
     restricted = yaml.load(f.read())
 
+# Grab human-readable product names/categories
+with open(os.path.join(__location__, 'domain/products.yaml')) as f:
+    products = yaml.load(f.read())
 
 class ProductNames(object):
-    @classmethod
-    def get(cls):
+    def groups(self, staff_role=False):
+        """ Gives human-readable mappings and logical-groups to all orderable products"""
+        retdata = dict()
+        for category_name in products['categories']:
+            if category_name not in retdata:
+                retdata[category_name] = products['categories'][category_name]
+                retdata[category_name]['products'] = dict()
+                retdata[category_name]['rank'] = products['categories'][category_name]['rank']
+
+            prods = {p: v for p, v in products['products'].items()
+                     if v['category'] == category_name}
+            for product, struct in prods.items():
+                # TODO: implement staff_role by currently authenticated user
+                # if not staff_role and i in restricted['all']['role']:
+                #     continue
+                is_plotable = (product in restricted['stats']['products']
+                               if product != 'stats' else None)
+                rdat = {product: {
+                    'is_plotable': is_plotable,
+                    'title': struct['title'],
+                    'required_customizations': list(),
+                    'rank': struct['rank']
+                }}
+                retdata[category_name]['products'].update(rdat)
+
+        return retdata
+
+    def get(self):
         """ Defines the mapping between products and sensor variables
         :return: AllProducts class (namedtuple)
         """
         # API product values
-        product_names = ["source_metadata", "l1", "pixel_qa",
-                         "toa", "bt", "cloud", "toa_ndvi",
-                         "sr", "lst", "swe",
-                         "sr_ndvi", "sr_evi", "sr_savi", "sr_msavi", "sr_ndmi",
-                         "sr_nbr", "sr_nbr2",
-                         "stats"]
+        product_names = tuple(products['products'].keys())
         prods = namedtuple('AllProducts', product_names)
         # Internal code names
-        return prods("source_metadata", "l1", "pixel_qa",
-                     "toa", "bt", "cloud", "toa_ndvi",
-                     "sr", "lst", "swe",
-                     "sr_ndvi", "sr_evi", "sr_savi", "sr_msavi", "sr_ndmi",
-                     "sr_nbr", "sr_nbr2",
-                     "stats")
+        return prods(*product_names)
 AllProducts = ProductNames().get()
-
 
 class SensorProduct(object):
     """Base class for all sensor products"""
@@ -49,11 +67,11 @@ class SensorProduct(object):
     # landsat sceneid, modis tile name, aster granule id, etc.
     product_id = None
 
-    # tm, etm, modis, abi, etc
-    sensor_name = None
+    # lt5, le7, mod, myd, etc
+    sensor_code = None
 
-    # Landsat7, Terra, GOES16, etc
-    platform_name = None
+    # tm, etm, terra, aqua, etc
+    sensor_name = None
 
     # four digits
     year = None
@@ -82,42 +100,7 @@ class SensorProduct(object):
         """
 
         self.product_id = product_id
-
-
-class Abi(SensorProduct):
-    """Superclass for all Advanced-Baseline-Imager (ABI) products"""
-    input_filename_extension = '.nc'
-    l1_provider = 'dmid'
-
-    def __init__(self, product_id):
-        super(Abi, self).__init__(product_id)
-
-        parts = product_id.strip().split('_')
-        self.short_name = ''.join([parts[2], parts[1].split('-')[0]])
-        self.date_acquired = parts[3][1:15]
-        self.date_produced = parts[5][1:15]
-        self.multichannel = len(product_id.split(';')) > 1
-
-    def __repr__(self):
-        return 'ABI: {}'.format(self.__dict__)
-
-
-class Goes16(Abi):
-    """Superclass for GOES-16 based ABI products"""
-    platform_name = 'goes16'
-    sensor_name = 'abi'
-    products = [AllProducts.l1, AllProducts.toa_ndvi]
-
-
-class AbiCmip(Abi):
-    """models ABI Cloud/Moisture Imagery Product (CMIP)"""
-    default_resolution_m = 1000
-    default_resolution_dd = 0.0089831
-
-
-class AbiGoes16Cmip(Goes16, AbiCmip):
-    """models ABI CMIP from GOES 16"""
-    lta_json_name = 'GOES16_ABI_CMIP'
+        self.sensor_code = product_id[0:3]
 
 
 class Modis(SensorProduct):
@@ -154,17 +137,17 @@ class Modis(SensorProduct):
         return 'MODIS: {}'.format(self.__dict__)
 
 
+
 class Terra(Modis):
     """Superclass for Terra based Modis products"""
-    platform_name = 'terra'
-    sensor_name = 'modis'
+
+    sensor_name = 'terra'
     products = [AllProducts.l1, AllProducts.stats]
 
 
 class Aqua(Modis):
     """Superclass for Aqua based Modis products"""
-    platform_name = 'aqua'
-    sensor_name = 'modis'
+    sensor_name = 'aqua'
     products = [AllProducts.l1, AllProducts.stats]
 
 
@@ -383,7 +366,7 @@ class Landsat(SensorProduct):
 
 class LandsatTM(Landsat):
     """Models Landsat TM only products"""
-    products = [AllProducts.source_metadata, AllProducts.l1, AllProducts.toa, AllProducts.bt, AllProducts.sr, AllProducts.lst, AllProducts.swe,
+    products = [AllProducts.source_metadata, AllProducts.l1, AllProducts.toa, AllProducts.bt, AllProducts.sr, AllProducts.st, AllProducts.swe,
                 AllProducts.sr_ndvi, AllProducts.sr_evi, AllProducts.sr_savi, AllProducts.sr_msavi, AllProducts.sr_ndmi,
                 AllProducts.sr_nbr, AllProducts.sr_nbr2, AllProducts.stats, AllProducts.cloud, AllProducts.pixel_qa]
     lta_name = 'LANDSAT_TM'
@@ -396,7 +379,7 @@ class LandsatTM(Landsat):
 
 class LandsatETM(Landsat):
     """Models Landsat ETM only products"""
-    products = [AllProducts.source_metadata, AllProducts.l1, AllProducts.toa, AllProducts.bt, AllProducts.sr, AllProducts.lst, AllProducts.swe,
+    products = [AllProducts.source_metadata, AllProducts.l1, AllProducts.toa, AllProducts.bt, AllProducts.sr, AllProducts.st, AllProducts.swe,
                 AllProducts.sr_ndvi, AllProducts.sr_evi, AllProducts.sr_savi, AllProducts.sr_msavi, AllProducts.sr_ndmi,
                 AllProducts.sr_nbr, AllProducts.sr_nbr2, AllProducts.stats, AllProducts.cloud, AllProducts.pixel_qa]
     lta_name = 'LANDSAT_ETM_PLUS'
@@ -409,7 +392,7 @@ class LandsatETM(Landsat):
 
 class LandsatOLITIRS(Landsat):
     """Models Landsat OLI/TIRS only products"""
-    products = [AllProducts.source_metadata, AllProducts.l1, AllProducts.toa, AllProducts.bt, AllProducts.sr, AllProducts.lst, AllProducts.swe,
+    products = [AllProducts.source_metadata, AllProducts.l1, AllProducts.toa, AllProducts.bt, AllProducts.sr, AllProducts.st, AllProducts.swe,
                 AllProducts.sr_ndvi, AllProducts.sr_evi, AllProducts.sr_savi, AllProducts.sr_msavi, AllProducts.sr_ndmi,
                 AllProducts.sr_nbr, AllProducts.sr_nbr2, AllProducts.stats, AllProducts.cloud, AllProducts.pixel_qa]
     lta_name = 'LANDSAT_8'
@@ -443,7 +426,6 @@ class LandsatTIRS(Landsat):
 
 class Landsat4(Landsat):
     """Models Landsat 4 only products"""
-    platform_name = 'landsat4'
 
     def __init__(self, product_id):
         super(Landsat4, self).__init__(product_id)
@@ -459,7 +441,6 @@ class Landsat4TM(LandsatTM, Landsat4):
 
 class Landsat5(Landsat):
     """Models Landsat 5 only products"""
-    platform_name = 'landsat5'
 
     def __init__(self, product_id):
         super(Landsat5, self).__init__(product_id)
@@ -475,7 +456,6 @@ class Landsat5TM(LandsatTM, Landsat5):
 
 class Landsat7(Landsat):
     """Models Landsat 7 only products"""
-    platform_name = 'landsat7'
 
     def __init__(self, product_id):
         super(Landsat7, self).__init__(product_id)
@@ -491,7 +471,6 @@ class Landsat7ETM(LandsatETM, Landsat7):
 
 class Landsat8(Landsat):
     """Models Landsat 8 only products"""
-    platform_name = 'landsat8'
 
     def __init__(self, product_id):
         super(Landsat8, self).__init__(product_id)
@@ -601,12 +580,8 @@ class SensorCONST(object):
                     ModisAqua13Q1, 'myd13q1.A2000072.h02v09.005.2008237032813'),
 
         'myd11a1': (r'^myd11a1\.a\d{7}\.h\d{2}v\d{2}\.00[5-6]\.\d{13}$',
-                    ModisAqua11A1, 'myd13q1.A2000072.h02v09.005.2008237032813'),
-
-        'goes16_cmip': (r'^or_abi-l2-cmip\w{1}-m\d{1}c\d{2}_g16_s\d{14}_e\d{14}_c\d{14}',
-                        AbiGoes16Cmip, 'or_abi-l2-cmipf-m3c02_g16_s20171851815381_e20171851826148_c20171851826216')
+                    ModisAqua11A1, 'myd13q1.A2000072.h02v09.005.2008237032813')
     }
-    instances = {k: (re.compile(v[0]), v[1], v[2]) for k,v in instances.items()}
 
 
 def instance(product_id):
@@ -628,7 +603,6 @@ def instance(product_id):
     _id = product_id.lower().strip()
     __modis_ext = Modis.input_filename_extension
     __landsat_ext = Landsat.input_filename_extension
-    __goes_ext = Goes16.input_filename_extension
 
     if _id.endswith(__modis_ext):
         index = _id.index(__modis_ext)
@@ -642,22 +616,10 @@ def instance(product_id):
         product_id = product_id[0:index]
         _id = _id[0:index]
 
-    elif __goes_ext in _id:
-        product_id = product_id.replace(__goes_ext, '')
-        _id = _id.replace(__goes_ext, '')
-
     instances = SensorCONST.instances
 
     for key in instances.iterkeys():
-        if key == 'goes16_cmip' and len(_id.split(';')) > 1:
-            # Same-time GOES-ABI "Imagery" products are separated by Channel-Number in the ID
-            #  and users are allowed to supply more than 1 (to produce NDVI)
-            res = [instance(_ix) for _ix in _id.split(';')]
-            res = len(set([getattr(r, 'date_acquired') for r in res])) == 1
-        else:
-            res = instances[key][0].match(_id)
-
-        if res:
+        if re.match(instances[key][0], _id):
             inst = instances[key][1](product_id.strip())
             inst.shortname = key
             return inst

@@ -1,7 +1,7 @@
 ---
 all:
     role:
-        - lst
+        - st
         - swe
         - cloud
         - restricted_prod
@@ -32,11 +32,11 @@ stats:
         - 'sr_ndmi'
         - 'sr_nbr'
         - 'sr_nbr2'
-        - 'lst'
+        - 'st'
 
 olitirs8:
     role:
-        - lst
+        - st
     by_date:
         sr:
             - "< 2016050 | > 2016058"
@@ -83,7 +83,12 @@ etm7:
             - "< 2016151 | > 2016164"
             - "< 2017071 | > 2017076"
 
-goes16_cmip:
-    role:
-        - l1
-        - toa_ndvi
+# This is an order which should go through alternative channels
+source:
+    sensors: [olitirs8_collection, etm7_collection, tm4_collection, tm5_collection]
+    products: [l1, source_metadata]
+    format: gtiff
+    custom: [format, image_extents, resize, projection]
+    message: >
+        order includes only Landsat Level-1 data products, please contact
+        User Services for other available options

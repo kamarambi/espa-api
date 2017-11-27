@@ -15,6 +15,7 @@ from api.domain.mocks.order import MockOrder
 from api.domain.mocks.user import MockUser
 from api.domain.order import Order
 from api.domain.user import User
+from api.providers.configuration.configuration_provider import ConfigurationProvider
 from api.providers.production.mocks.production_provider import MockProductionProvider
 from api.providers.production.production_provider import ProductionProvider
 from api.external.mocks import lta as mocklta
@@ -25,6 +26,7 @@ from mock import patch
 api = APIv1()
 production_provider = ProductionProvider()
 mock_production_provider = MockProductionProvider()
+cfg = ConfigurationProvider()
 
 
 class TestAPI(unittest.TestCase):
@@ -164,6 +166,8 @@ class TestValidation(unittest.TestCase):
         for proj in testorders.good_test_projections:
             valid_order = copy.deepcopy(self.base_order)
             valid_order['projection'] = {proj: testorders.good_test_projections[proj]}
+            if 'lonlat' not in valid_order['projection']:
+                valid_order['resize'] = {"pixel_size": 30, "pixel_size_units": "meters"}
 
             try:
                 good = api.validation(valid_order, self.staffuser.username)
@@ -242,6 +246,69 @@ class TestValidation(unittest.TestCase):
                 with self.assertRaisesRegexp(exc_type, err_message):
                     api.validation.validate(invalid_order, self.staffuser.username)
 
+    def test_projection_units_geographic(self):
+        """
+        Make sure Geographic (latlon) projection only accepts "dd" units
+        """
+        part_order = {
+            "olitirs8_collection": {
+                "inputs": ['lc08_l1tp_015035_20140713_20170304_01_t1'],
+                "products": ["l1"]
+            },
+            "projection": {"lonlat": None},
+            "format": "gtiff",
+            "resampling_method": "cc"
+            }
+        bad_parts = {
+            "resize": {"pixel_size": 30, "pixel_size_units": "meters"},
+            "image_extents": {"north": 80, "south": -80,
+                              "east": 170, "west": -170, "units": "meters"},
+            }
+
+        err_msg = '{} units must be in "dd" for projection "lonlat"'
+        exc_type = ValidationException
+
+        for bname in bad_parts:
+            invalid_order = copy.deepcopy(part_order)
+            invalid_order.update({bname: bad_parts.get(bname)})
+            with self.assertRaisesRegexp(exc_type, err_msg.format(bname)):
+                api.validation.validate(invalid_order, self.staffuser.username)
+
+    def test_l1_only_restricted(self):
+        """ Landsat Level-1 data needs to go through other channels """
+        invalid_order = {
+            "olitirs8_collection": {
+                "inputs": ["lc08_l1tp_015035_20140713_20170304_01_t1"],
+                "products": ["l1"]
+            },
+            "format": "gtiff"
+        }
+        with self.assertRaisesRegexp(ValidationException, 'Landsat Level-1 data products'):
+            api.validation.validate(invalid_order, self.staffuser.username)
+
+    def test_l1_only_restricted_override(self):
+        """ Customizations or other sensors should override Level-1 restrictions """
+        valid_orders = [{
+            "olitirs8_collection": {
+                "inputs": ["lc08_l1tp_015035_20140713_20170304_01_t1"],
+                "products": ["l1"]
+            },
+            "format": "envi"
+            },
+            {
+            "olitirs8_collection": {
+                "inputs": ["lc08_l1tp_015035_20140713_20170304_01_t1"],
+                "products": ["l1"]
+            },
+            "myd13a2": {
+                "inputs": ["myd13a2.a2017249.h19v06.006.2017265235022"],
+                "products": ["l1"]
+            },
+            "format": "gtiff"
+        }]
+        for vorder in valid_orders:
+            api.validation.validate(vorder, self.staffuser.username)
+
     # def test_validate_utm_zone(self):
     #     invalid_order = copy.deepcopy(self.base_order)
     #     invalid_order['projection'] = {'utm': {'zone': 50, 'zone_ns': 'north'}}
@@ -292,9 +359,9 @@ class TestInventory(unittest.TestCase):
         """
         Check LTA support from the inventory provider
         """
-        os.environ['ESPA_M2M_MODE'] = 'LANDSAT'
+        cfg.put('system.m2m_val_enabled', 'True')
         self.assertIsNone(api.inventory.check(self.lta_order_good))
-        os.environ['ESPA_M2M_MODE'] = ''
+        cfg.put('system.m2m_val_enabled', 'False')
 
     @patch('api.external.lta.requests.post', mocklta.get_verify_scenes_response_invalid)
     @patch('api.external.lta.check_lta_available', lambda: True)
