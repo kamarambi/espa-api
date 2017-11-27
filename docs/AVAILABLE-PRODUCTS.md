@@ -26,7 +26,6 @@ a request to `https://espa.cr.usgs.gov/api/v1/available-products`
 | MODIS 13A3  | :heavy_check_mark: | :heavy_check_mark: |:heavy_check_mark:|
 | MODIS 13Q1  | :heavy_check_mark: | :heavy_check_mark: |:heavy_check_mark:|
 | MODIS 11A1  | :heavy_check_mark: | :heavy_check_mark: |:heavy_check_mark:|
-| GOES16 CMIP  | :x: | :x: | :x: |
 
 ### ESPA Higher-Level CDR/ECV Outputs
 |  | TOA | SR | BT | ST | DSWE | CLOUD
@@ -46,7 +45,6 @@ a request to `https://espa.cr.usgs.gov/api/v1/available-products`
 | MODIS 13A3  | :x: | :x: | :x: | :x: | :x: | :x: |
 | MODIS 13Q1  | :x: | :x: | :x: | :x: | :x: | :x: |
 | MODIS 11A1  | :x: | :x: | :x: | :x: | :x: | :x: |
-| GOES16 CMIP  | :x: | :x: | :x: | :x: | :x: | :x: |
 
 ### ESPA SR-based Spectral Indices
 |  | NDVI | EVI | SAVI | MSAVI | NDMI | NBR | NBR2 |
@@ -66,7 +64,6 @@ a request to `https://espa.cr.usgs.gov/api/v1/available-products`
 | MODIS 13A3  | :x: | :x: | :x: | :x: | :x: | :x: | :x: |
 | MODIS 13Q1  | :x: | :x: | :x: | :x: | :x: | :x: | :x: |
 | MODIS 11A1  | :x: | :x: | :x: | :x: | :x: | :x: | :x: |
-| GOES16 CMIP  | :x: | :x: | :x: | :x: | :x: | :x: | :x: |
 
 ### Notes
 Statistics and plotting are available for all ESPA output products, except the Cloud Mask.
@@ -77,5 +74,3 @@ have already been processed to a level beyond level 1 by the datasource:
 * MODIS 09 series is at SR
 * MODIS 13 series is at NDVI/EVI
 * MODIS 11 series is at LST
-
-GOES-ABI products are provisional and not available to the public at this time.

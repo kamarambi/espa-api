@@ -21,13 +21,7 @@ good_test_projections = {'aea': {'standard_parallel_1': 29.5,
                          'ps': {'longitudinal_pole': 0,
                                 'latitude_true_scale': 75,
                                 'false_easting': 0,
-                                'false_northing': 0},
-                         'geos': {'satellite_height': 35786023,
-                                  'central_meridian': -89.5,
-                                  'sweep_axis': 'x',
-                                  'false_easting': 0,
-                                  'false_northing': 0,
-                                  'ellipsoid': 'grs80'}}
+                                'false_northing': 0}}
 
 
 def build_base_order():
@@ -108,11 +102,7 @@ def build_base_order():
                                                             ['mod11a1', 'myd11a1']),
                      # TODO: REMOVE _collection from IDs
                      'L1TP_044030_19851028_20161004_01_T1': (['LT04_', 'LT05_', 'LE07_', 'LO08_', 'LC08_'],
-                                                             ['tm4_collection', 'tm5_collection', 'etm7_collection', 'oli8_collection', 'olitirs8_collection']),
-
-                     'M3C02_G16_s20171851815381_e20171851826148_c20171851826216': (['OR_ABI-L2-CMIPF-'],
-                                                                                   ['goes16_cmip'])
-                     }
+                                                             ['tm4_collection', 'tm5_collection', 'etm7_collection', 'oli8_collection', 'olitirs8_collection'])}
 
     for acq in sensor_acqids:
         for prefix, label in zip(sensor_acqids[acq][0], sensor_acqids[acq][1]):

@@ -316,17 +316,6 @@ class TestValidation(unittest.TestCase):
     #     with self.assertRaisesRegexp(ValidationException, 'are not near the requested UTM zone'):
     #         api.validation.validate(invalid_order, self.staffuser.username)
 
-    def test_invalidate_multichannel_products(self):
-        """
-        Make sure GOES-ABI is raising errors for TOA_NDVI products without multi-channel input lists
-        """
-        goes_order = {'goes16_cmip': {'inputs': ['or_abi-l2-cmipc-m3c02_g16_s20171721702192_e20171721704565_c20171721705067.nc',
-                                                 'or_abi-l2-cmipf-m3c02_g16_s20171721700384_e20171721711151_c20171721711222.nc'],
-                                   'products': ['l1', 'toa_ndvi']},
-                       'format': 'gtiff'}
-        with self.assertRaisesRegexp(ValidationException, 'Multichannel required'):
-            api.validation.validate(goes_order, self.staffuser.username)
-
 
 class TestInventory(unittest.TestCase):
     def setUp(self):
