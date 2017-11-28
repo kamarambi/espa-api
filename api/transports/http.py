@@ -1,6 +1,7 @@
 # Tie together the urls for functionality
 
 import os
+import sys
 
 from flask import Flask, request, make_response, jsonify
 from flask.ext.restful import Api, Resource, reqparse, fields, marshal
@@ -43,93 +44,115 @@ def internal_server_error(e):
 
 transport_api = Api(app)
 
-# USER facing functionality
+resources = [
+    # USER facing functionality
+    {
+        "operator": "Index",
+        "paths": ["/"]
+    }, {
+        "operator": "VersionInfo",
+        "paths": ['/api', '/api/', '/api/v<version>', '/api/v<version>/']
+    }, {
+        "operator": "UserInfo",
+        "paths": ['/api/v<version>/user', '/api/v<version>/user/']
+    }, {
+        "operator": "AvailableProducts",
+        "paths": [
+            '/api/v<version>/available-products/<prod_id>',
+            '/api/v<version>/available-products',
+            '/api/v<version>/available-products/']
+    }, {
+        "operator": "ValidationInfo",
+        "paths": [
+            '/api/v<version>/projections',
+            '/api/v<version>/formats',
+            '/api/v<version>/resampling-methods',
+            '/api/v<version>/order-schema',
+            '/api/v<version>/product-groups']
+    }, {
+        "operator": "ListOrders",
+        "paths": [
+            '/api/v<version>/list-orders',
+            '/api/v<version>/list-orders/',
+            '/api/v<version>/list-orders/<email>',
+            '/api/v<version>/list-orders-feed/<email>']
+    }, {
+        "operator": "Ordering",
+        "paths": [
+            '/api/v<version>/order',
+            '/api/v<version>/order/',
+            '/api/v<version>/order/<ordernum>',
+            '/api/v<version>/order-status/<ordernum>']
+    }, {
+        "operator": "ItemStatus",
+        "paths": [
+            '/api/v<version>/item-status',
+            '/api/v<version>/item-status/<orderid>',
+            '/api/v<version>/item-status/<orderid>/<itemnum>']
+    }, {
+        "operator": "BacklogStats",
+        "paths": [
+            '/api/v<version>/info/backlog']
+    }, {
+        "operator": "PublicSystemStatus",
+        "paths": [
+            '/api/v<version>/info/status']
+    }, {
+        "operator": "Reports",
+        "paths": [
+            '/api/v<version>/reports/',
+            '/api/v<version>/reports/<name>/',
+            '/api/v<version>/statistics/',
+            '/api/v<version>/statistics/<name>',
+            '/api/v<version>/aux_report/<group>/',
+            '/api/v<version>/aux_report/<group>/<year>']
+    }, {
+        "operator": "SystemStatus",
+        "paths": [
+            '/api/v<version>/system-status',
+            '/api/v<version>/system-status-update',
+            '/api/v<version>/system/config']
 
-transport_api.add_resource(Index, '/')
+    }, {
+        "operator": "OrderResets",
+        "paths": [
+            '/api/v<version>/error_to_submitted/<orderid>',
+            '/api/v<version>/error_to_unavailable/<orderid>']
+    # PRODUCTION facing functionality
+    }, {
+        "operator": "ProductionVersion",
+        "paths": [
+            '/production-api',
+            '/production-api/v<version>']
+    }, {
+        "operator": "ProductionOperations",
+        "paths": [
+            '/production-api/v<version>/products',
+            '/production-api/v<version>/<action>',
+            '/production-api/v<version>/handle-orders',
+            '/production-api/v<version>/queue-products']
+    }, {
+        "operator": "ProductionStats",
+        "paths": [
+            '/production-api/v<version>/statistics/<name>',
+            '/production-api/v<version>/multistat/<name>']
+    }, {
+        "operator": "ProductionManagement",
+        "paths": [
+            '/production-api/v<version>/handle-orphans',
+            '/production-api/v<version>/reset-status']
+    }, {
+        "operator": "ProductionConfiguration",
+        "paths": [
+            '/production-api/v<version>/configuration/<key>']
+    }
+]
 
-transport_api.add_resource(VersionInfo,
-                           '/api',
-                           '/api/',
-                           '/api/v<version>',
-                           '/api/v<version>/')
+def get_resource(name):
+    return reduce(getattr, name.split("."), sys.modules[__name__])
 
-transport_api.add_resource(UserInfo,
-                           '/api/v<version>/user',
-                           '/api/v<version>/user/')
-
-transport_api.add_resource(AvailableProducts,
-                           '/api/v<version>/available-products/<prod_id>',
-                           '/api/v<version>/available-products',
-                           '/api/v<version>/available-products/')
-
-transport_api.add_resource(ValidationInfo,
-                           '/api/v<version>/projections',
-                           '/api/v<version>/formats',
-                           '/api/v<version>/resampling-methods',
-                           '/api/v<version>/order-schema',
-                           '/api/v<version>/product-groups')
-
-transport_api.add_resource(ListOrders,
-                           '/api/v<version>/list-orders',
-                           '/api/v<version>/list-orders/',
-                           '/api/v<version>/list-orders/<email>',
-                           '/api/v<version>/list-orders-feed/<email>')
-
-transport_api.add_resource(Ordering,
-                           '/api/v<version>/order',
-                           '/api/v<version>/order/',
-                           '/api/v<version>/order/<ordernum>',
-                           '/api/v<version>/order-status/<ordernum>')
-
-transport_api.add_resource(ItemStatus,
-                           '/api/v<version>/item-status',
-                           '/api/v<version>/item-status/<orderid>',
-                           '/api/v<version>/item-status/<orderid>/<itemnum>')
-
-transport_api.add_resource(BacklogStats,
-                           '/api/v<version>/info/backlog')
-
-transport_api.add_resource(PublicSystemStatus,
-                           '/api/v<version>/info/status')
-
-transport_api.add_resource(Reports,
-                           '/api/v<version>/reports/',
-                           '/api/v<version>/reports/<name>/',
-                           '/api/v<version>/statistics/',
-                           '/api/v<version>/statistics/<name>',
-                           '/api/v<version>/aux_report/<group>/',
-                           '/api/v<version>/aux_report/<group>/<year>')
-
-transport_api.add_resource(SystemStatus,
-                           '/api/v<version>/system-status',
-                           '/api/v<version>/system-status-update',
-                           '/api/v<version>/system/config')
-
-transport_api.add_resource(OrderResets,
-                           '/api/v<version>/error_to_submitted/<orderid>',
-                           '/api/v<version>/error_to_unavailable/<orderid>')
-
-# PRODUCTION facing functionality
-transport_api.add_resource(ProductionVersion,
-                           '/production-api',
-                           '/production-api/v<version>')
-
-transport_api.add_resource(ProductionOperations,
-                           '/production-api/v<version>/products',
-                           '/production-api/v<version>/<action>',
-                           '/production-api/v<version>/handle-orders',
-                           '/production-api/v<version>/queue-products')
-
-transport_api.add_resource(ProductionStats,
-                           '/production-api/v<version>/statistics/<name>',
-                           '/production-api/v<version>/multistat/<name>')
-
-transport_api.add_resource(ProductionManagement,
-                           '/production-api/v<version>/handle-orphans',
-                           '/production-api/v<version>/reset-status')
-
-transport_api.add_resource(ProductionConfiguration,
-                           '/production-api/v<version>/configuration/<key>')
+for res in resources:
+    transport_api.add_resource(get_resource(res['operator']), *res['paths'])
 
 
 if __name__ == '__main__':
