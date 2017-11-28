@@ -207,3 +207,10 @@ class OrderResets(Resource):
         _to_state = _to_whole.split('_')[-1]
         return str(espa.error_to(orderid, _to_state))
 
+
+class Metrics(Resource):
+    decorators = [auth.login_required, whitelist, version_filter]
+
+    @staticmethod
+    def get(version):
+        return ['ordered.scenes']
