@@ -10,12 +10,9 @@ from api.providers.configuration.configuration_provider import ConfigurationProv
 from api.util import api_cfg
 from api.system.logger import ilogger as logger
 
-from http_user import Index, VersionInfo, AvailableProducts, ValidationInfo,\
-    ListOrders, Ordering, UserInfo, ItemStatus, BacklogStats, PublicSystemStatus
-
-from http_production import ProductionVersion, ProductionConfiguration, ProductionOperations, ProductionManagement
-
-from http_admin import Reports, SystemStatus, OrderResets, ProductionStats
+import http_user
+import http_production
+import http_admin
 from http_json import MessagesResponse, BadRequestResponse, SystemErrorResponse
 
 config = ConfigurationProvider()
@@ -47,22 +44,22 @@ transport_api = Api(app)
 resources = [
     # USER facing functionality
     {
-        "operator": "Index",
+        "operator": "http_user.Index",
         "paths": ["/"]
     }, {
-        "operator": "VersionInfo",
+        "operator": "http_user.VersionInfo",
         "paths": ['/api', '/api/', '/api/v<version>', '/api/v<version>/']
     }, {
-        "operator": "UserInfo",
+        "operator": "http_user.UserInfo",
         "paths": ['/api/v<version>/user', '/api/v<version>/user/']
     }, {
-        "operator": "AvailableProducts",
+        "operator": "http_user.AvailableProducts",
         "paths": [
             '/api/v<version>/available-products/<prod_id>',
             '/api/v<version>/available-products',
             '/api/v<version>/available-products/']
     }, {
-        "operator": "ValidationInfo",
+        "operator": "http_user.ValidationInfo",
         "paths": [
             '/api/v<version>/projections',
             '/api/v<version>/formats',
@@ -70,35 +67,35 @@ resources = [
             '/api/v<version>/order-schema',
             '/api/v<version>/product-groups']
     }, {
-        "operator": "ListOrders",
+        "operator": "http_user.ListOrders",
         "paths": [
             '/api/v<version>/list-orders',
             '/api/v<version>/list-orders/',
             '/api/v<version>/list-orders/<email>',
             '/api/v<version>/list-orders-feed/<email>']
     }, {
-        "operator": "Ordering",
+        "operator": "http_user.Ordering",
         "paths": [
             '/api/v<version>/order',
             '/api/v<version>/order/',
             '/api/v<version>/order/<ordernum>',
             '/api/v<version>/order-status/<ordernum>']
     }, {
-        "operator": "ItemStatus",
+        "operator": "http_user.ItemStatus",
         "paths": [
             '/api/v<version>/item-status',
             '/api/v<version>/item-status/<orderid>',
             '/api/v<version>/item-status/<orderid>/<itemnum>']
     }, {
-        "operator": "BacklogStats",
+        "operator": "http_user.BacklogStats",
         "paths": [
             '/api/v<version>/info/backlog']
     }, {
-        "operator": "PublicSystemStatus",
+        "operator": "http_user.PublicSystemStatus",
         "paths": [
             '/api/v<version>/info/status']
     }, {
-        "operator": "Reports",
+        "operator": "http_admin.Reports",
         "paths": [
             '/api/v<version>/reports/',
             '/api/v<version>/reports/<name>/',
@@ -107,42 +104,42 @@ resources = [
             '/api/v<version>/aux_report/<group>/',
             '/api/v<version>/aux_report/<group>/<year>']
     }, {
-        "operator": "SystemStatus",
+        "operator": "http_admin.SystemStatus",
         "paths": [
             '/api/v<version>/system-status',
             '/api/v<version>/system-status-update',
             '/api/v<version>/system/config']
 
     }, {
-        "operator": "OrderResets",
+        "operator": "http_admin.OrderResets",
         "paths": [
             '/api/v<version>/error_to_submitted/<orderid>',
             '/api/v<version>/error_to_unavailable/<orderid>']
     # PRODUCTION facing functionality
     }, {
-        "operator": "ProductionVersion",
+        "operator": "http_production.ProductionVersion",
         "paths": [
             '/production-api',
             '/production-api/v<version>']
     }, {
-        "operator": "ProductionOperations",
+        "operator": "http_production.ProductionOperations",
         "paths": [
             '/production-api/v<version>/products',
             '/production-api/v<version>/<action>',
             '/production-api/v<version>/handle-orders',
             '/production-api/v<version>/queue-products']
     }, {
-        "operator": "ProductionStats",
+        "operator": "http_admin.ProductionStats",
         "paths": [
             '/production-api/v<version>/statistics/<name>',
             '/production-api/v<version>/multistat/<name>']
     }, {
-        "operator": "ProductionManagement",
+        "operator": "http_production.ProductionManagement",
         "paths": [
             '/production-api/v<version>/handle-orphans',
             '/production-api/v<version>/reset-status']
     }, {
-        "operator": "ProductionConfiguration",
+        "operator": "http_production.ProductionConfiguration",
         "paths": [
             '/production-api/v<version>/configuration/<key>']
     }
