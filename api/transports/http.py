@@ -94,6 +94,7 @@ resources = [
         "operator": "http_user.PublicSystemStatus",
         "paths": [
             '/api/v<version>/info/status']
+    # ADMIN Functionality
     }, {
         "operator": "http_admin.Reports",
         "paths": [
@@ -115,6 +116,10 @@ resources = [
         "paths": [
             '/api/v<version>/error_to_submitted/<orderid>',
             '/api/v<version>/error_to_unavailable/<orderid>']
+    }, {
+        "operator": "http_admin.Metrics",
+        "paths": [
+            '/api/v<version>/metrics',]
     # PRODUCTION facing functionality
     }, {
         "operator": "http_production.ProductionVersion",
