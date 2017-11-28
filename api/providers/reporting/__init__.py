@@ -258,6 +258,65 @@ REPORTS = {
                      AND q.email = u.email
                      ORDER BY q.running ASC, o.order_date ASC
                      LIMIT 25'''
+    },
+    'metrics_scenes_ordered_usgs': {
+            'display_name': 'Metrics - Scenes Ordered',
+            'description': 'Shows the number of scenes ordered per interface, separated by USGS and non-USGS emails',
+            'query':r'''select SUM(jsonb_array_length(o.product_opts->sensors->'inputs')) scenes,
+                            sensors,
+                            o.order_source,
+                            (case when o.email ~* '.*usgs.gov$' then '@usgs.gov' else 'other' end) usgsemail
+                        from ordering_order o,
+                        lateral jsonb_object_keys(product_opts) sensors
+                        where o.order_date > now() - interval '1 month'
+                        and o.product_opts->sensors ? 'inputs'
+                        group by o.order_source, sensors, usgsemail
+                        order by usgsemail desc, o.order_source, sensors; '''
+    },
+    'metrics_orders_ordered': {
+            'display_name': 'Metrics - Orders Ordered',
+            'description': 'Shows the number of orders ordered per interface',
+            'query':r'''select COUNT(*) orders,
+                            order_source,
+                            (case when o.email ~* '.*usgs.gov$' then '@usgs.gov' else 'other' end) usgsemail
+                        from ordering_order
+                        where order_date > now() - interval '1 month'
+                        group by order_source, usgsemail '''
+    },
+    'metrics_unique_users': {
+            'display_name': 'Metrics - Unique Users',
+            'description': 'Shows the total number of unique users per interface',
+            'query':r'''select count(distinct email) emails,
+                            order_source,
+                            (case when o.email ~* '.*usgs.gov$' then '@usgs.gov' else 'other' end) usgsemail
+                        from ordering_order
+                        where order_date > now() - interval '1 month'
+                        group by order_source, usgsemail;'''
+    },
+    'metrics_products_ordered': {
+            'display_name': 'Metrics - Ordered Product counts',
+            'description': 'Shows the total number of products ordered for each sensor type',
+            'query':r'''select count(*) orders, products, sensors
+                        from ordering_order,
+                        lateral jsonb_object_keys(product_opts) sensors,
+                        lateral jsonb_array_elements(product_opts->sensors->'products') products
+                        where order_date > now() - interval '1 month'
+                        and product_opts->sensors ? 'inputs'
+                        group by products, sensors'''
+    },
+    'metrics_top_users': {
+            'display_name': 'Metrics - Top Users Scene counts',
+            'description': 'Shows the total number of scenes ordered grouped by user email',
+            'query':r'''select o.email,
+                            sum(jsonb_array_length(o.product_opts->sensor->'inputs')) scenes,
+                            sensor
+                        from ordering_order o,
+                             lateral jsonb_object_keys(o.product_opts) sensor
+                        where o.order_date > now() - interval '1 month'
+                        and o.product_opts->sensor ? 'inputs'
+                        group by o.email, sensor
+                        order by scenes desc
+                        limit 15 '''
     }
 }
 
