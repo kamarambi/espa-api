@@ -219,3 +219,10 @@ class Metrics(Resource):
     def post(version, name):
         data = request.get_json(force=True)
         return espa.query_metric(name, data)
+
+class AutoReports(Resource):
+    decorators = [auth.login_required, whitelist, version_filter]
+
+    @staticmethod
+    def get(version, frequency=None, name=None):
+        return espa.get_autoreport(frequency, name)

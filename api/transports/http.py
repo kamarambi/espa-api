@@ -121,6 +121,13 @@ resources = [
         "paths": [
             '/api/v<version>/metrics',
             '/api/v<version>/metrics/<name>']
+    }, {
+        "operator": "http_admin.AutoReports",
+        "paths": [
+            "/api/v<version>/auto-reports",
+            "/api/v<version>/auto-reports/<frequency>",
+            "/api/v<version>/auto-reports/<frequency>/<name>"
+        ]
     # PRODUCTION facing functionality
     }, {
         "operator": "http_production.ProductionVersion",
