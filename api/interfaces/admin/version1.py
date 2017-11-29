@@ -14,6 +14,7 @@ class API(object):
 
         self.admin = self.providers.administration
         self.reporting = self.providers.reporting
+        self.metrics = self.providers.metrics
 
     @staticmethod
     def api_versions():
@@ -226,5 +227,19 @@ class API(object):
             response = self.reporting.missing_auxiliary_data(group, year)
         except:
             logger.critical("ERR retrieving auxiliary report for {} group, year {}\ntrace: {}".format(group, year, traceback.format_exc()))
+            response = default_error_message
+        return response
+
+    def get_metric(self, name):
+        # TODO: docstring
+        try:
+            if name is not None:
+                response = self.metrics.metric_info(name)
+            else:
+                response = self.metrics.list_metrics()
+        except:
+            msg = ("ERR getting metrics info for name {}\ntrace: {}"
+                   .format(name, traceback.format_exc()))
+            logger.critical(msg)
             response = default_error_message
         return response
