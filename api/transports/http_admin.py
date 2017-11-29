@@ -212,5 +212,5 @@ class Metrics(Resource):
     decorators = [auth.login_required, whitelist, version_filter]
 
     @staticmethod
-    def get(version):
-        return ['ordered.scenes']
+    def get(version, name=None):
+        return espa.get_metric(name)
