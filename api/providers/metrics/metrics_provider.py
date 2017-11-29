@@ -7,7 +7,8 @@ from collections import namedtuple
 import yaml
 
 from api import __location__
-
+from api.util.dbconnect import db_instance, DBConnectException
+from api.system.logger import ilogger as logger
 
 
 MetricsQuery = namedtuple('MetricsQuery', ['description', 'display_name',
@@ -61,3 +62,15 @@ class Metrics(object):
 
         sql_query = query.query.replace('{{WHERE}}', where)
         return sql_query
+
+    @staticmethod
+    def run_sql(sql, values):
+        with db_instance() as db:
+            log = db.cursor.mogrify(sql, values)
+            logger.debug('metrics_provider.py where sql: {}'.format(log))
+            db.select(sql, values)
+            return db[:]
+
+    @staticmethod
+    def format_result(query, results):
+        return {k: [r[k] for r in results] for k in query.returns}
