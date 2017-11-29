@@ -27,7 +27,10 @@ if espa_log_dir and not os.getenv('ESPA_LOG_STDOUT'):
     ih = FileHandler(os.path.join(espa_log_dir, 'espa-api-info.log'))
 else:
     ih = StreamHandler(stream=sys.stdout)
-eh = SMTPHandler(mailhost='localhost', fromaddr=config.get('apiemailsender'), toaddrs=config.get('ESPA_API_EMAIL_RECEIVE').split(','), subject='ESPA API ERROR')
+if os.getenv('ESPA_API_EMAIL_RECEIVE'):
+    eh = SMTPHandler(mailhost='localhost', fromaddr=config.get('apiemailsender'), toaddrs=config.get('ESPA_API_EMAIL_RECEIVE').split(','), subject='ESPA API ERROR')
+else:
+    eh = StreamHandler(stream=sys.stderr)
 
 if config.mode not in ('tst', 'dev'):
     ih.setLevel(logging.INFO)
