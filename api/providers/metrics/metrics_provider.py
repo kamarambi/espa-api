@@ -35,8 +35,8 @@ class Metrics(object):
 
     @staticmethod
     def read_sqls(fname):
-        return {k: MetricsQuery(v)
-                for k, v in yaml.load(open(queries_fname, 'r'))}
+        return {k: MetricsQuery(**v)
+                for k, v in yaml.load(open(fname, 'r')).items()}
 
     @staticmethod
     def list_metrics(queries):
