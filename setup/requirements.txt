@@ -28,3 +28,4 @@ cov-core
 nose2
 nose2-cov
 passlib
+python-dateutil==2.6.1
