@@ -254,3 +254,14 @@ class API(object):
             logger.critical(msg)
             response = default_error_message
         return response
+
+    def get_autoreport(self, freq, name):
+        # TODO: docstring
+        try:
+            response = self.reporting.listing(freq, name)
+        except:
+            msg = ("ERR getting automated report info for frequency {} name {}\ntrace: {}"
+                   .format(freq, name, traceback.format_exc()))
+            logger.critical(msg)
+            response = default_error_message
+        return response
