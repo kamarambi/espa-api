@@ -13,14 +13,17 @@ class MetricsProviderInterface(object):
     def read_metric(self, name, **kwargs):
         pass
 
-    @abc.abstractproperty
-    def metrics():
+    @abc.abstractmethod
+    def metric_info(self, name):
         pass
 
 
 class MockMetricsProvider(MetricsProviderInterface):
 
     def list_metrics(self):
+        pass
+
+    def metric_info(self, name):
         pass
 
     def read_metric(self, name, **kwargs):
