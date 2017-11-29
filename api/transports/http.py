@@ -119,7 +119,8 @@ resources = [
     }, {
         "operator": "http_admin.Metrics",
         "paths": [
-            '/api/v<version>/metrics',]
+            '/api/v<version>/metrics',
+            '/api/v<version>/metrics/<name>']
     # PRODUCTION facing functionality
     }, {
         "operator": "http_production.ProductionVersion",
