@@ -1,0 +1,35 @@
+ordered.order_sources:
+  description: Shows the visitor traffic to different order sources
+  template: >
+    ==========================================
+     On-demand - {order_source}
+    ==========================================
+     Total scenes ordered in the {freq} for {order_source} interface: {scenes_month}
+     Number of scenes ordered in the {freq} (USGS) for {order_source} interface: {scenes_usgs}
+     Number of scenes ordered in the {freq} (non-USGS) for {order_source} interface: {scenes_non}
+     Total orders placed in the {freq} for {order_source} interface: {orders_month}
+     Number of total orders placed in the {freq} (USGS) for {order_source} interface: {orders_usgs}
+     Number of total orders placed in the {freq} (non-USGS) for {order_source} interface: {orders_non}
+     Total number of unique On-Demand users for {order_source} interface: {tot_unique}
+  frequency: ["day", "week", "month"]
+  values:
+    scenes_month:
+      metric: ordered.scenes
+    scenes_usgs:
+      metric: ordered.scenes
+      optionals:
+        email: "@usgs.gov"
+    scenes_non:
+      diff: [scenes_month, scenes_usgs]
+    orders_month:
+      metric: ordered.orders
+    orders_usgs:
+      metric: ordered.orders
+      optionals:
+        email: "@usgs.gov"
+    orders_non:
+      diff: [orders_month orders_usgs]
+    tot_unique:
+      metric: ordered.unique_users
+  optionals:
+    order_source: ["espa", "ee"]
