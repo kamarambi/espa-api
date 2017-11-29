@@ -1,0 +1,101 @@
+ordered.products:
+  description: Ordered Product Options
+  display_name: Ordered Products
+  query: >
+    SELECT product_opts
+    FROM ordering_order
+             left join lateral jsonb_object_keys(product_opts) sensors on True
+    {{WHERE}}
+    group by product_opts, id
+  where: WHERE product_opts->sensors ? 'inputs'
+  required:
+    start_date: order_date::date >= %(start_date)s
+    stop_date: order_date::date <= %(stop_date)s
+  optionals:
+    sensors: sensors in %(sensors)s
+  returns:
+    product_opts:
+      type: object
+
+ordered.orders:
+  description: Count number of orders by source/email
+  display_name: Orders Ordered
+  query: >
+    select COUNT(distinct orderid) orders
+      from ordering_order
+    left join lateral jsonb_object_keys(product_opts) sensors on True
+    {{WHERE}}
+  where: WHERE product_opts->sensors ? 'inputs'
+  required:
+    start_date: order_date::date >= %(start_date)s
+    stop_date: order_date::date <= %(stop_date)s
+  optionals:
+    sensors: sensors in %(sensors)s
+    email: orderid like %(email)s
+    order_source: order_source = %(order_source)s
+  returns:
+    orders:
+      type: number
+
+ordered.scenes:
+  description: Count number of scenes by source/email
+  display_name: Scenes Ordered
+  query: >
+    select coalesce(sum(jsonb_array_length(product_opts->sensors->'inputs')),0) scenes
+    from ordering_order
+    left join lateral jsonb_object_keys(product_opts) sensors on True
+    {{WHERE}}
+  where: WHERE product_opts->sensors ? 'inputs'
+  required:
+    start_date: ordering_order.order_date::date >= %(start_date)s
+    stop_date: ordering_order.order_date::date <= %(stop_date)s
+  optionals:
+    sensors: sensors in %(sensors)s
+    email: ordering_order.orderid like %(email)s
+    order_source: ordering_order.order_source = %(order_source)s
+  returns:
+    scenes:
+      type: number
+
+ordered.top_users:
+  description: Count orders placed by unique users email
+  display_name: Top 10 Users
+  query: >
+    select u.email, coalesce(sum(jsonb_array_length(product_opts->sensors->'inputs')),0) scenes
+    from ordering_order o
+    left join lateral jsonb_object_keys(product_opts) sensors on True
+    join auth_user u
+    on o.user_id = u.id
+    {{WHERE}}
+    group by u.email order by scenes desc
+    limit 10
+  where: WHERE product_opts->sensors ? 'inputs'
+  required:
+    start_date: o.order_date::date >= %(start_date)s
+    stop_date: o.order_date::date <= %(stop_date)s
+  optionals:
+    sensors: sensors in %(sensors)s
+  returns:
+    email:
+      type: string
+    scenes:
+      type: number
+
+ordered.unique_users:
+  description: Count distinct email addresses from orders
+  display_name: Unique Users
+  query: >
+    select count(distinct(split_part(orderid, '-', 1))) emails
+        from ordering_order
+    left join lateral jsonb_object_keys(product_opts) sensors on True
+    {{WHERE}}
+  where: WHERE product_opts->sensors ? 'inputs'
+  required:
+    start_date: order_date::date >= %(start_date)s
+    stop_date: order_date::date <= %(stop_date)s
+  optionals:
+    sensors: sensors in %(sensors)s
+    order_source: order_source = %(order_source)s
+  returns:
+    emails:
+      type: number
