@@ -243,3 +243,14 @@ class API(object):
             logger.critical(msg)
             response = default_error_message
         return response
+
+    def query_metric(self, name, data):
+        # TODO: docstring
+        try:
+            response = self.metrics.read_metric(name, data)
+        except:
+            msg = ("ERR running metrics info for name {} data {}\ntrace: {}"
+                   .format(name, data, traceback.format_exc()))
+            logger.critical(msg)
+            response = default_error_message
+        return response

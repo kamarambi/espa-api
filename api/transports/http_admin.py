@@ -214,3 +214,8 @@ class Metrics(Resource):
     @staticmethod
     def get(version, name=None):
         return espa.get_metric(name)
+
+    @staticmethod
+    def post(version, name):
+        data = request.get_json(force=True)
+        return espa.query_metric(name, data)
