@@ -681,7 +681,7 @@ class ProductionProvider(ProductionProviderInterfaceV0):
 
         orders = lta.get_available_orders()
         if contact_id:
-            orders = [(o, e, c) for (o, e, c) in orders if c == contact_id]
+            orders = {(o, e, c): v for (o, e, c), v in orders.items() if c == contact_id}
         logger.info('# Orders available from EE: {}'.format(len(orders)))
 
         # {(order_num, email, contactid): [{sceneid: ,
