@@ -176,30 +176,36 @@ class OrderValidatorV0(validictory.SchemaValidator):
                     return
                 if self.data_source['image_extents']['units'] != 'dd':
                     return
-                if max(map(abs, [self.data_source['image_extents']['north'],
-                                 self.data_source['image_extents']['south']])) < 80:
-                    cdict = dict(inzone=self.data_source['projection']['utm']['zone'],
-                                east=self.data_source['image_extents']['east'],
-                                west=self.data_source['image_extents']['west'],
-                                zbuffer=3)
-                    if not self.is_utm_zone_nearby(**cdict):
-                        msg = ('image_extents ({east}E,{west}W) are not near the'
-                               ' requested UTM zone ({inzone})'
-                               .format(**cdict))
-                        self._errors.append(msg)
-                north = max([self.data_source['image_extents']['north'],
-                             self.data_source['image_extents']['south']])
-                if self.data_source['projection']['utm']['zone'] == 'south':
-                    north *= -1
-                nsbuffer = -5 # degrees
-                if north < nsbuffer:
-                    projection = self.data_source['projection']['utm'].copy()
-                    projection.update(self.data_source['image_extents'].copy())
-                    msg = ('image_extents ({north}N,{south}S) are not near the'
-                           ' requested UTM Zone Hemisphere ({zone_ns})'
-                           .format(**projection))
-                    self._errors.append(msg)
+                utm_extents_errors = self.verify_extents_dd_and_utm(self.data_source)
+                if utm_extents_errors:
+                    self._errors.extend(utm_extents_errors)
 
+    def verify_extents_dd_and_utm(self, order):
+        errors = []
+        if max(map(abs, [order['image_extents']['north'],
+                            order['image_extents']['south']])) < 80:
+            cdict = dict(inzone=order['projection']['utm']['zone'],
+                        east=order['image_extents']['east'],
+                        west=order['image_extents']['west'],
+                        zbuffer=3)
+            if not self.is_utm_zone_nearby(**cdict):
+                msg = ('image_extents ({east}E,{west}W) are not near the'
+                        ' requested UTM zone ({inzone})'
+                        .format(**cdict))
+                errors.append(msg)
+        north = max([order['image_extents']['north'],
+                        order['image_extents']['south']])
+        if order['projection']['utm']['zone'] == 'south':
+            north *= -1
+        nsbuffer = -5 # degrees
+        if north < nsbuffer:
+            projection = order['projection']['utm'].copy()
+            projection.update(order['image_extents'].copy())
+            msg = ('image_extents ({north}N,{south}S) are not near the'
+                    ' requested UTM Zone Hemisphere ({zone_ns})'
+                    .format(**projection))
+            errors.append(msg)
+        return errors
 
     @staticmethod
     def is_utm_zone_nearby(inzone, east, west, zbuffer=3):
@@ -494,110 +500,138 @@ class BaseValidationSchema(object):
     projections = {'aea': {'type': 'object',
                            'title': 'Albers Equal Area',
                            'pixel_units':  ('meters', 'dd'),
+                           'display_rank': 0,
                            'properties': {'standard_parallel_1': {'type': 'number',
                                                                   'title': '1st Standard Parallel',
+                                                                  'display_rank': 2,
                                                                   'required': True,
                                                                   'minimum': -90,
                                                                   'maximum': 90},
                                           'standard_parallel_2': {'type': 'number',
                                                                   'title': '2nd Standard Parallel',
+                                                                  'display_rank': 3,
                                                                   'required': True,
                                                                   'minimum': -90,
                                                                   'maximum': 90},
                                           'central_meridian': {'type': 'number',
                                                                'title': 'Central Meridian',
+                                                               'display_rank': 1,
                                                                'required': True,
                                                                'minimum': -180,
                                                                'maximum': 180},
                                           'latitude_of_origin': {'type': 'number',
                                                                  'title': 'Latitude of Origin',
+                                                                 'display_rank': 0,
                                                                  'required': True,
                                                                  'minimum': -90,
                                                                  'maximum': 90},
                                           'false_easting': {'type': 'number',
                                                             'title': 'False Easting (meters)',
+                                                            'display_rank': 4,
                                                             'required': True},
                                           'false_northing': {'type': 'number',
                                                              'title': 'False Northing (meters)',
+                                                             'display_rank': 5,
                                                              'required': True},
                                           'datum': {'type': 'string',
                                                     'title': 'Datum',
                                                     'required': True,
+                                                    'display_rank': 6,
                                                     'enum': {'wgs84': 'World Geodetic System 1984',
                                                              'nad27': 'North American Datum 1927',
                                                              'nad83': 'North American Datum 1983'}}}},
                    'utm': {'type': 'object',
                            'pixel_units':  ('meters', 'dd'),
+                           'display_rank': 1,
                            'title': 'Universal Transverse Mercator',
                            'properties': {'zone': {'type': 'integer',
                                                    'title': 'UTM Grid Zone Number',
+                                                   'display_rank': 0,
                                                    'required': True,
                                                    'minimum': 1,
                                                    'maximum': 60},
                                           'zone_ns': {'type': 'string',
                                                       'title': 'UTM Hemisphere',
+                                                      'display_rank': 1,
                                                       'required': True,
                                                       'enum': {'north': 'North', 'south': 'South'}}}},
                    'lonlat': {'type': 'null',
                               'pixel_units': ('dd',),
-                              'title': 'Geographic'},
+                              'title': 'Geographic',
+                              'display_rank': 2},
                    'sinu': {'type': 'object',
                             'title': 'Sinusoidal',
                             'pixel_units': ('meters', 'dd'),
+                            'display_rank': 3,
                             'properties': {'central_meridian': {'type': 'number',
                                                                 'title': 'Central Meridian',
+                                                                'display_rank': 0,
                                                                 'required': True,
                                                                 'minimum': -180,
                                                                 'maximum': 180},
                                            'false_easting': {'type': 'number',
                                                              'title': 'False Easting (meters)',
+                                                             'display_rank': 1,
                                                              'required': True},
                                            'false_northing': {'type': 'number',
                                                               'title': 'False Northing (meters)',
+                                                              'display_rank': 2,
                                                               'required': True}}},
                    'ps': {'type': 'object',
                           'title': 'Polar Stereographic',
                           'pixel_units': ('meters', 'dd'),
+                          'display_rank': 4,
                           'properties': {'longitudinal_pole': {'type': 'number',
                                                                'title': 'Longitudinal Pole',
+                                                               'display_rank': 0,
                                                                'required': True,
                                                                'minimum': -180,
                                                                'maximum': 180},
                                          'latitude_true_scale': {'type': 'number',
                                                                  'title': 'Latitude True Scale',
+                                                                 'display_rank': 1,
                                                                  'required': True,
                                                                  'abs_rng': (60, 90)},
                                          'false_easting': {'type': 'number',
                                                            'title': 'False Easting (meters)',
+                                                           'display_rank': 2,
                                                            'required': True},
                                          'false_northing': {'type': 'number',
                                                             'title': 'False Northing (meters)',
+                                                            'display_rank': 3,
                                                             'required': True}}}}
 
     extents = {'north': {'type': 'number',
                          'title': 'Upper left Y coordinate',
+                         'display_rank': 2,
                          'required': True},
                'south': {'type': 'number',
                          'title': 'Lower right Y coordinate',
+                         'display_rank': 4,
                          'required': True},
                'east': {'type': 'number',
                         'title': 'Lower right X coordinate',
+                        'display_rank': 3,
                         'required': True},
                'west': {'type': 'number',
                         'title': 'Upper left X coordinate',
+                        'display_rank': 1,
                         'required': True},
                'units': {'type': 'string',
                          'title': 'Coordinate system units',
+                         'display_rank': 0,
                          'required': True,
                          'enum': {'dd': 'Decimal Degrees', 'meters': 'Meters'}}}
 
     resize = {'pixel_size': {'type': 'number',
                              'title': 'Pixel Size',
+                             'display_rank': 0,
                              'required': True,
                              'ps_dd_rng': (0.0002695, 0.0449155),
                              'ps_meters_rng': (30, 5000)},
               'pixel_size_units': {'type': 'string',
                                    'title': 'Pixel Size Units',
+                                   'display_rank': 1,
                                    'required': True,
                                    'enum': {'dd': 'Decimal Degrees', 'meters': 'Meters'}}}
 
@@ -607,20 +641,25 @@ class BaseValidationSchema(object):
                       'properties': {'projection': {'properties': projections,
                                                     'type': 'object',
                                                     'title': 'Reproject Products',
+                                                    'display_rank': 1,
                                                     'single_obj': True},
                                      'image_extents': {'type': 'object',
                                                        'title': 'Modify Image Extents',
+                                                       'display_rank': 2,
                                                        'properties': extents,
                                                        'dependencies': ['projection']},
                                      'format': {'type': 'string',
                                                 'title': 'Output Format',
+                                                'display_rank': 0,
                                                 'required': True,
                                                 'enum': formats},
                                      'resize': {'type': 'object',
                                                 'title': 'Pixel Resizing',
+                                                'display_rank': 3,
                                                 'properties': resize},
                                      'resampling_method': {'type': 'string',
                                                            'title': 'Resample Method',
+                                                           'display_rank': 4,
                                                            'enum': resampling_methods},
                                      'plot_statistics': {'type': 'boolean',
                                                          'title': 'Plot Output Product Statistics'},
